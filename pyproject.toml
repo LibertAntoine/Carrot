@@ -1,0 +1,69 @@
+[project]
+name = "jumper"
+version = "0.0.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Antoine Libert", email = "contact@antoine-libert.com" }]
+maintainers = [
+    { name = "Antoine Libert", email = "contact@antoine-libert.com" },
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Build Tools",
+    "Programming Language :: Python :: 3 :: Only",
+]
+
+dependencies = [
+    "Django>=4,<5",
+    "psycopg2-binary>=2,<3",
+    "python-dotenv>=0.21,<0.22",
+    "djangorestframework>=3,<4",
+    "djangorestframework_simplejwt>=5,<6",
+    "django-rest-passwordreset>=1,<2",
+    "django-cors-headers>=4,<5",
+    "django-user-agents>=0.4,<0.5",
+    "django-group-model>=1,<2",
+    "django-storages>=1,<2",
+    "django-resized>=1,<2",
+    "django-scim2>0.19,<0.20",
+    "django-filter>25,<26",
+    "django-simple-history>=3,<4",
+    "dj-inmemorystorage>=2,<3",
+    "mozilla-django-oidc>=4,<5",
+    "Pillow>=10,<11",
+    "drf-yasg>=1,<2",
+    "boto3>=1,<2",
+    "minio>=7,<8",
+    "jsonschema>=4,<5",
+    "django-upload-validator>=1,<2",
+]
+
+[project.optional-dependencies]
+prod = [
+    "uvicorn>=0.22,<0.23",
+    "gunicorn>=20,<21"
+]
+dev = [
+    "pylint>=2,<3",
+    "pylint-django>=2,<3",
+    "black>=23,<24",
+    "pytest>=7,<8",
+    "pytest-mock>=3,<4",
+    "pytest-django>=4,<5",
+    "watchdog>=4,<5",
+]
+
+[build-system]
+requires = ["setuptools>=43.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.pylint]
+disable = "C0330,C0326,C0305,C0103,W0312,R0903" # To correspond to PEP8 specs.
+max-line-length = 79
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "jumper.settings"
+python_files = ["test_*.py", "*_test.py", "testing/python/*.py"]
