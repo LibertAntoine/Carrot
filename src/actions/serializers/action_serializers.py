@@ -10,22 +10,54 @@ from actions.models.action_models import Action
 
 class ActionSerializer(serializers.ModelSerializer):
     """Serializer for Action model."""
+
     data = serializers.SerializerMethodField()
 
     def get_data(self, action: Action) -> dict:
         """Return data type."""
-        return {
-            'type': action.data.type
-        }
+        return {"type": action.data.type}
 
     class Meta:
         model = Action
         fields = ["id", "name", "description", "creation_date", "last_update", "data"]
         read_only_fields = ["id", "creation_date", "last_update"]
 
+    def create(self, validated_data):
+        """Create Action."""
+        data = self.initial_data.get("data")
+        if not data:
+            raise serializers.ValidationError({"data": "This field is required."})
+        self.check_data_type(data)
+        data_serializer = action_data_serializers.get(data["type"])
+        data_serializer = data_serializer(data={"type": data["type"]})
+        data_serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            validated_data["data"] = data_serializer.save()
+            return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        """Update Action."""
+        if self.initial_data.pop("data", None):
+            raise serializers.ValidationError(
+                {
+                    "data": "This field is not updatable. Use query param detailed=true to update action data."
+                }
+            )
+        return super().update(instance, validated_data)
+
+    def check_data_type(self, data):
+        """Check if data type is supported."""
+        if not data.get("type"):
+            raise serializers.ValidationError({"data.type": "This field is required."})
+        if not action_data_serializers.get(data["type"]):
+            raise serializers.ValidationError(
+                {"data.type": f"Data type {data['type']} not supported."}
+            )
+
 
 class ActionPlayableSerializer(ActionSerializer):
     """Serializer for Action model."""
+
     def get_data(self, action: Action) -> dict:
         """Return action data."""
         serializer = action_data_serializers.get(action.data.type)
@@ -76,29 +108,25 @@ class ActionWriteDetailedSerializer(ActionPlayableSerializer):
 
     def create(self, validated_data):
         """Create Action."""
+        data = self.initial_data.get("data")
+        if not data:
+            raise serializers.ValidationError({"data": "This field is required."})
+        self.check_data_type(data)
+        data_serializer = action_data_serializers.get(data["type"])
+        data_serializer = data_serializer(data=data)
+        data_serializer.is_valid(raise_exception=True)
         with transaction.atomic():
-            data = self.initial_data.get("data")
-            if not data:
-                raise serializers.ValidationError({"data": "This field is required."})
-            if not data.get("type"):
-                raise serializers.ValidationError(
-                    {"data.type": "This field is required."}
-                )
-            data_serializer = action_data_serializers.get(data["type"])
-            if not data_serializer:
-                raise serializers.ValidationError(
-                    f"Data type ${data['type']} not supported."
-                )
-            data_serializer = data_serializer(data=data)
-            data_serializer.is_valid(raise_exception=True)
-            action_data = data_serializer.save()
-            validated_data["data"] = action_data
-            return super().create(validated_data)
+            validated_data["data"] = data_serializer.save()
+            return serializers.ModelSerializer.create(self, validated_data)
 
     def update(self, instance, validated_data):
         """Update Action."""
+        data = self.initial_data.pop("data", None)
+        if data.get("type") and data["type"] != instance.data.type:
+            raise serializers.ValidationError(
+                {"data.type": "This field is not updatable."}
+            )
         with transaction.atomic():
-            data = self.initial_data.pop("data", None)
             if data:
                 data_serializer = action_data_serializers.get(instance.data.type)
                 if not data_serializer:
@@ -107,4 +135,4 @@ class ActionWriteDetailedSerializer(ActionPlayableSerializer):
                 data_serializer = data_serializer(data_instance, data)
                 data_serializer.is_valid(raise_exception=True)
                 data_serializer.save()
-            return super().update(instance, validated_data)
+            return serializers.ModelSerializer.update(self, instance, validated_data)

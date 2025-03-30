@@ -20,11 +20,8 @@ class ActionData(models.Model, metaclass=AbstractActionData):
 
 class PythonActionData(ActionData):
     TYPE = "Python"
-
     code = models.TextField()
 
 class LinkActionData(ActionData):
     TYPE = "Link"
-
-    url = models.URLField()
-
+    url = models.URLField(default="https://example.com")
