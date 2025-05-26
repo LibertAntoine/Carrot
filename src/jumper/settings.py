@@ -23,6 +23,7 @@ dotenv.load_dotenv()
 # CORE SETTINGS
 ###############
 
+
 INSTALLED_APPS = [
     "auths",
     "users",

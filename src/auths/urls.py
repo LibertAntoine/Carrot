@@ -12,6 +12,7 @@ from .views import (
     CookieTokenRefreshView,
     logout_view,
     get_auth_status,
+    get_app_info
 )
 
 
@@ -21,6 +22,7 @@ urlpatterns = [
     path("auth/config", get_config, name="auth-config"),
     path("auth/logout", logout_view, name="token_verify"),
     path("auth/refresh", CookieTokenRefreshView.as_view(), name="token_refresh"),
+    path("info", get_app_info, name="app-info"),
 ]
 
 if settings.JWT_ENABLED:

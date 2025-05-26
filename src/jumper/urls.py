@@ -7,11 +7,13 @@ from jumper import settings
 router = routers.DefaultRouter()
 
 urlpatterns = [
-    *router.urls,
-    path("", include("users.urls")),
-    path("", include("auths.urls")),
-    path("", include("actions.urls")),
-    # Documentation routes
-    *swagger_urls,
+    path("v1/", include([
+        *router.urls,
+        path("", include("users.urls")),
+        path("", include("auths.urls")),
+        path("", include("actions.urls")),
+        # Documentation routes
+        *swagger_urls
+    ])),
     re_path(r"^static/(?P<path>.*)$", serve, {"document_root": settings.STATIC_ROOT}),
 ]

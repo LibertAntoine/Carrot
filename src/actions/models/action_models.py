@@ -17,7 +17,7 @@ class Action(models.Model):
     PYTHON = "Python"
     TYPE_CHOICES = [(PYTHON, "Python")]
 
-    THUMBNAIL_RESOLUTION = (500, 300)
+    THUMBNAIL_RESOLUTION = (80, 80)
     THUMBNAIL_FORMAT = "PNG"
     name = models.CharField(
         max_length=25,
@@ -27,6 +27,14 @@ class Action(models.Model):
     description = models.TextField(
         max_length=500,
         blank=True,
+    )
+    is_active = models.BooleanField(
+        default=False,
+        help_text="Is the action active?",
+    )
+    is_public = models.BooleanField(
+        default=False,
+        help_text="Is the action public?",
     )
     creation_date = models.DateTimeField(auto_now_add=True)
     create_by = models.ForeignKey(
@@ -39,7 +47,6 @@ class Action(models.Model):
     last_update = models.DateTimeField(auto_now=True)
     thumbnail = ResizedImageField(
         size=THUMBNAIL_RESOLUTION,
-        crop=["middle", "center"],
         force_format=THUMBNAIL_FORMAT,
         upload_to=generate_thumbnail_path,
         blank=True,

@@ -1,5 +1,5 @@
 from rest_framework import routers
-from .views import ActionViewSet
+from .views.action_viewset import ActionViewSet
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.register(r"actions", ActionViewSet, basename="actions")

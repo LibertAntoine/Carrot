@@ -94,6 +94,11 @@ def get_config(request):
         'providers': providers
     })
 
+@api_view(['GET'])
+def get_app_info(request):
+    return Response({
+        'name': 'Carrot',
+    })
 
 @api_view(["GET"])
 def get_auth_status(request):

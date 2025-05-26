@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.conf import settings
 
 from users.models import Group
+from users.serializers.user_serializers import UserSerializer
 
 class GroupSerializer(serializers.ModelSerializer):
     """Serializer for Group model."""
@@ -24,3 +25,16 @@ class GroupSerializer(serializers.ModelSerializer):
         if not admin_group:
             return False
         return group.id == admin_group.id
+    
+
+class GroupDetailedSerializer(GroupSerializer):
+    """Detailed serializer for Group model."""
+    user_set = UserSerializer(many=True, read_only=True)
+
+    class Meta(GroupSerializer.Meta):
+        fields = GroupSerializer.Meta.fields + [
+            "user_set",
+        ]
+        read_only_fields = GroupSerializer.Meta.read_only_fields + [
+            "user_set",
+        ]

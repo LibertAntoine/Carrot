@@ -5,11 +5,45 @@ from rest_framework.exceptions import ValidationError
 from django.conf import settings
 
 from users.models import User
-from users.serializers.group_serializers import GroupSerializer
+
+
+class ShortUserSerializer(serializers.ModelSerializer):
+    """Serializer for User model with limited fields."""
+    profile_picture_url = serializers.SerializerMethodField()
+
+    def get_profile_picture_url(self, user: User) -> str:
+        """Return profile picture url."""
+        if bool(user.profile_picture):
+            request = self.context.get("request")
+            file_name = user.profile_picture.name.split("/")[-1]
+            return request.build_absolute_uri(
+                reverse("user-profile", args=[user.id, file_name])
+            )
+        return None
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "profile_picture_url"
+        ]
+        read_only_fields = [
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "profile_picture_url"
+        ]
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for User model."""
+
     profile_picture_url = serializers.SerializerMethodField()
     groups = serializers.SerializerMethodField()
     external_id = serializers.SerializerMethodField()
