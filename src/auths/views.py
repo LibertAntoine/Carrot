@@ -1,5 +1,4 @@
 from django.contrib.auth import authenticate
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -30,7 +29,6 @@ def login_view(request):
 
 
 @api_view(['POST'])
-@csrf_exempt
 @permission_classes([IsAuthenticated])
 def logout_view(request):
     refresh_token = request.COOKIES.get(settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'])
@@ -43,7 +41,6 @@ def logout_view(request):
     response = Response(status=status.HTTP_204_NO_CONTENT)
     response.delete_cookie(settings.SIMPLE_JWT['AUTH_COOKIE'], **cookie_params)
     response.delete_cookie(settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'], **cookie_params)
-    response.delete_cookie("csrftoken", **cookie_params)
     return response
 
 

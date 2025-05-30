@@ -50,10 +50,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.http.ConditionalGetMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -85,7 +84,7 @@ VERIFYING_KEY_FILE = os.environ.get(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", False)
+DEBUG = os.environ.get("DEBUG", "False").lower() in ("True", "1")
 
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@mail.com")
@@ -136,17 +135,6 @@ AWS_S3_ENDPOINT_URL = f"http://{os.environ['S3_ENDPOINT_HOST']}:{os.environ.get(
 AWS_S3_SECURE_URLS = False
 AWS_S3_USE_SSL = False
 
-
-######################
-# CORS & CSRF POLICIES
-######################
-
-ALLOWED_HOSTS = ['*']
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
-CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = ['http://localhost:5173']
-
-
 ################
 # AUTHENTICATION
 ################
@@ -165,11 +153,11 @@ SIMPLE_JWT = {
     "ALGORITHM": "RS256",
     "SIGNING_KEY": open(SIGNING_KEY_FILE).read(),
     "VERIFYING_KEY": open(VERIFYING_KEY_FILE).read(),
+    "AUTH_COOKIE_DOMAIN": None,
     "AUTH_COOKIE": "access_token",
     "AUTH_COOKIE_REFRESH": "refresh_token",
-    "AUTH_COOKIE_DOMAIN": os.environ.get("AUTH_COOKIE_DOMAIN", "localhost"),
-    "AUTH_COOKIE_SECURE": True,
-    "AUTH_COOKIE_HTTP_ONLY": True,
+    "AUTH_COOKIE_SECURE": False,
+    "AUTH_COOKIE_HTTP_ONLY": False,
     "AUTH_COOKIE_PATH": "/",
     "AUTH_COOKIE_SAMESITE": None,
 }
@@ -343,6 +331,10 @@ DJANGO_REST_PASSWORDRESET_NO_INFORMATION_LEAKAGE = True
 ########
 # OTHERS
 ########
+
+ALLOWED_HOSTS = ["*"]
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

@@ -1,9 +1,6 @@
-from rest_framework.authentication import CSRFCheck
-from rest_framework import exceptions
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, AuthenticationFailed
-from django.middleware import csrf
 from django.conf import settings
 
 BROWSER_USER_AGENTS = [
@@ -19,15 +16,6 @@ BROWSER_USER_AGENTS = [
     "Vivaldi",
 ]
 
-
-def enforce_csrf(request):
-    check = CSRFCheck(lambda _: None)
-    check.process_request(request)
-    reason = check.process_view(request, None, (), {})
-    if reason:
-        raise exceptions.PermissionDenied("CSRF Failed: %s" % reason)
-
-
 class JwtCookiesAuthentication(JWTAuthentication):
     def authenticate(self, request):
         if request.user_agent.browser.family not in BROWSER_USER_AGENTS:
@@ -39,7 +27,6 @@ class JwtCookiesAuthentication(JWTAuthentication):
 
         try:
             validated_token = self.get_validated_token(raw_token)
-            enforce_csrf(request)
             return self.get_user(validated_token), validated_token
         except (InvalidToken, AuthenticationFailed):
             return None
@@ -80,7 +67,6 @@ def set_jwt_tokens(tokens, response, request, with_refresh=True):
                 path="/",
             )
         response.data = {"Success": "Login successfully"}
-        csrf.get_token(request)
         if response.data.get("access"):
             del response.data["access"]
     else:
