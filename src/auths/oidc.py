@@ -1,4 +1,4 @@
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse
 from rest_framework.permissions import AllowAny
 from mozilla_django_oidc.views import (
     OIDCAuthenticationRequestView,
@@ -9,18 +9,21 @@ from django.conf import settings
 from users.models import User
 from .jwt import set_jwt_tokens, get_tokens_for_user
 
-
 class OIDCAuthCallback(OIDCAuthenticationCallbackView):
     def login_success(self):
         tokens = get_tokens_for_user(self.user)
         # TODO: optionally redirect to jumper, to allow oidc auth from another app
-        response = HttpResponseRedirect(
-            f"jumper://oidc-auth-callback?status=success&access_token={tokens['access']}&refresh_token={tokens['refresh']}"
+        redirect_url = (
+            f"jumper://oidc-auth-callback?"
+            f"status=success&access_token={tokens['access']}&refresh_token={tokens['refresh']}"
         )
+
+        response = HttpResponse(status=302)
+        response['Location'] = redirect_url
+
         set_jwt_tokens(tokens, response, self.request, with_refresh=False)
         response.delete_cookie("sessionid", path="/")
         return response
-
 
 class OIDCAuthRequest(OIDCAuthenticationRequestView):
     permission_classes = [AllowAny]
