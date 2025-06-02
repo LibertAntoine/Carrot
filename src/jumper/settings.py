@@ -16,6 +16,7 @@ import logging
 import os
 from pathlib import Path
 import sys
+from corsheaders.defaults import default_headers
 
 dotenv.load_dotenv()
 
@@ -335,6 +336,9 @@ DJANGO_REST_PASSWORDRESET_NO_INFORMATION_LEAKAGE = True
 ALLOWED_HOSTS = ["*"]
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'x-client-agent',
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
