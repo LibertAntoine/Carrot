@@ -5,6 +5,7 @@ from mozilla_django_oidc.views import (
     OIDCAuthenticationCallbackView,
 )
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 from django.conf import settings
 from users.models import User
 from .jwt import set_jwt_tokens, get_tokens_for_user
@@ -33,11 +34,19 @@ class OIDCAuthRequest(OIDCAuthenticationRequestView):
     def get(self, request, *args, **kwargs):
         response = super().get(request, *args, **kwargs)
 
-        # Transfer request query_params to the redirect_url in the response
-        if request.query_params:
-            query_string = request.META.get('QUERY_STRING', '')
-            if query_string:
-                response['Location'] += '?' + query_string
+        if request.GET:
+            original_url = response['Location']
+            parsed_url = urlparse(original_url)
+            existing_query = parse_qs(parsed_url.query)
+
+            for key, value in request.GET.lists():
+                existing_query.setdefault(key, []).extend(value)
+
+            new_query = urlencode(existing_query, doseq=True)
+            new_url = urlunparse(parsed_url._replace(query=new_query))
+
+            response['Location'] = new_url
+
         return response
 
 class CustomOIDCAuthenticationBackend(OIDCAuthenticationBackend):
