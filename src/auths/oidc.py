@@ -30,6 +30,15 @@ class OIDCAuthCallback(OIDCAuthenticationCallbackView):
 class OIDCAuthRequest(OIDCAuthenticationRequestView):
     permission_classes = [AllowAny]
 
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+
+        # Transfer request query_params to the redirect_url in the response
+        if request.query_params:
+            query_string = request.META.get('QUERY_STRING', '')
+            if query_string:
+                response['Location'] += '?' + query_string
+        return response
 
 class CustomOIDCAuthenticationBackend(OIDCAuthenticationBackend):
     def filter_users_by_claims(self, claims):
