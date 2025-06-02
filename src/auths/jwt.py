@@ -66,11 +66,15 @@ def set_jwt_tokens(tokens, response, request, with_refresh=True):
                 domain=settings.SIMPLE_JWT["AUTH_COOKIE_DOMAIN"],
                 path="/",
             )
+    if (
+        request.user_agent.browser.family not in BROWSER_USER_AGENTS
+        or request.headers.get("X-Client-Agent") == "jumper-client"
+    ):
+        response.data = tokens if with_refresh else {"access": tokens["access"]}
+    else:
         response.data = {"Success": "Login successfully"}
         if response.data.get("access"):
             del response.data["access"]
-    else:
-        response.data = tokens if with_refresh else {"access": tokens["access"]}
 
 
 def get_cookie_params():
