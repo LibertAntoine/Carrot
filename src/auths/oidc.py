@@ -12,18 +12,20 @@ from .jwt import set_jwt_tokens, get_tokens_for_user
 class OIDCAuthCallback(OIDCAuthenticationCallbackView):
     def login_success(self):
         tokens = get_tokens_for_user(self.user)
-        # TODO: optionally redirect to jumper, to allow oidc auth from another app
-        redirect_url = (
-            f"jumper://oidc-auth-callback?"
-            f"status=success&access_token={tokens['access']}&refresh_token={tokens['refresh']}"
-        )
-
-        response = HttpResponse(status=302)
-        response['Location'] = redirect_url
-
-        set_jwt_tokens(tokens, response, self.request, with_refresh=False)
-        response.delete_cookie("sessionid", path="/")
-        return response
+        if self.request.query_params.get("client") == "jumper":
+            response = HttpResponse(status=302)
+            redirect_url = (
+                f"jumper://oidc-auth-callback?"
+                f"status=success&provider={self.request.get_host()}&"
+                f"access_token={tokens['access']}&refresh_token={tokens['refresh']}"
+            )
+            response['Location'] = redirect_url
+            return response
+        else:
+            response = HttpResponse(status=204)
+            set_jwt_tokens(tokens, response, self.request, with_refresh=False)
+            response.delete_cookie("sessionid", path="/")
+            return response
 
 class OIDCAuthRequest(OIDCAuthenticationRequestView):
     permission_classes = [AllowAny]
