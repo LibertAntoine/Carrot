@@ -9,6 +9,7 @@ from .oidc import OIDCAuthRequest, OIDCAuthCallback
 from .views import (
     get_config,
     login_view,
+    set_tokens_view,
     CookieTokenRefreshView,
     logout_view,
     get_auth_status,
@@ -47,6 +48,7 @@ if settings.JWT_ENABLED:
 
 if settings.OIDC_ENABLED:
     urlpatterns += [
+        path("auth/set-tokens", set_tokens_view, name="token_obtain_pair"),
         path("oidc/auth/", OIDCAuthRequest.as_view(), name="oidc_auth_request"),
         path("oidc/callback/", OIDCAuthCallback.as_view(), name="oidc_auth_callback"),
         path("oidc/", include("mozilla_django_oidc.urls")),
