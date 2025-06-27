@@ -1,4 +1,5 @@
 from django.db.models import Count
+from django.conf import settings
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from users.permissions import IsAdmin
@@ -9,9 +10,9 @@ from rest_framework.pagination import PageNumberPagination
 
 
 class RolePagination(PageNumberPagination):
-    page_size = 25
-    page_size_query_param = "limit"
-    max_page_size = 1000
+    page_size = settings.DEFAULT_PAGE_SIZE
+    page_size_query_param = settings.DEFAULT_PAGE_SIZE_QUERY_PARAM
+    max_page_size = settings.DEFAULT_MAX_PAGE_SIZE
 
 
 class RoleViewSet(viewsets.ModelViewSet):
