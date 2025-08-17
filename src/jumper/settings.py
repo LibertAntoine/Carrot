@@ -24,6 +24,7 @@ dotenv.load_dotenv()
 # CORE SETTINGS
 ###############
 
+DEFAULT_JUMPER_MAX_VERSION = "0.1"
 
 INSTALLED_APPS = [
     "auths",
@@ -329,6 +330,16 @@ EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS") == "True"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@something.com")
 DJANGO_REST_PASSWORDRESET_NO_INFORMATION_LEAKAGE = True
 
+####################
+# FRONTEND - UPDATES
+####################
+
+ALLOW_FRONTEND_UPDATES = os.environ.get("ALLOW_FRONTEND_UPDATES", "True") == "True"
+JUMPER_REPOSITORY_URL = os.environ.get(
+    "JUMPER_REPOSITORY_URL", "https://api.github.com/repos/LibertAntoine/Jumper"
+)
+MAX_ALLOWED_VERSION = os.environ.get("MAX_ALLOWED_VERSION", DEFAULT_JUMPER_MAX_VERSION)
+
 ########
 # OTHERS
 ########
@@ -337,7 +348,7 @@ ALLOWED_HOSTS = ["*"]
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
-    'x-client-agent',
+    "x-client-agent",
 ]
 
 # Default primary key field type

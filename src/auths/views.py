@@ -147,3 +147,5 @@ def get_app_info(request):
 @api_view(["GET"])
 def get_auth_status(request):
     return Response({"authenticated": request.user.is_authenticated})
+
+

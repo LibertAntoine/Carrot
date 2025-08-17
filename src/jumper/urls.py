@@ -3,6 +3,7 @@ from .swagger import swagger_urls
 from rest_framework import routers
 from django.views.static import serve
 from jumper import settings
+from .front_updater import check_update
 
 router = routers.DefaultRouter()
 
@@ -12,6 +13,7 @@ urlpatterns = [
         path("", include("users.urls")),
         path("", include("auths.urls")),
         path("", include("actions.urls")),
+        path("frontend-update", check_update, name="frontend-update"),
         # Documentation routes
         *swagger_urls
     ])),
