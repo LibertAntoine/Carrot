@@ -53,7 +53,7 @@ class ActionViewSet(viewsets.ModelViewSet, ActionThumbnailMixin):
 
     @action(methods=["get"], detail=False, permission_classes=[IsAuthenticated])
     def mine(self, request):
-        actions = get_user_active_actions(request.user)
+        actions = self.get_user_active_actions(request.user)
         return Response(
             ActionPlayableSerializer(
                 actions, many=True, context={"request": request}
@@ -113,15 +113,18 @@ class ActionViewSet(viewsets.ModelViewSet, ActionThumbnailMixin):
             version_count -= 1
         return Response(serializer.data)
 
-def get_user_active_actions(user):
-    return (
-        Action.objects.filter(is_active=True).filter(
-            Q(users=user)  # Actions linked to user
-            | Q(groups__user_set=user)  # Actions linked to user via group
-            | Q(roles__users=user)  # Actions linked to user via role
-            | Q(roles__groups__user_set=user)  # Actions linked to user via role group
-            | Q(is_public=True)  # Actions marked as public
+    def get_user_active_actions(self, user):
+        queryset = (
+            self.queryset.filter(is_active=True).filter(
+                Q(users=user)  # Actions linked to user
+                | Q(groups__user_set=user)  # Actions linked to user via group
+                | Q(roles__users=user)  # Actions linked to user via role
+                | Q(roles__groups__user_set=user)  # Actions linked to user via role group
+                | Q(is_public=True)  # Actions marked as public
+            )
+            .distinct()
+            .prefetch_related("users", "groups", "roles__users", "roles__groups")
         )
-        .distinct()
-        .prefetch_related("users", "groups", "roles__users", "roles__groups")
-    )
+
+        return self.filter_queryset(queryset)
+
