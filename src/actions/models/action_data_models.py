@@ -1,10 +1,12 @@
 from abc import ABCMeta, abstractmethod
 from django.db import models
 from simple_history.models import HistoricalRecords
-
+from django.core.exceptions import ValidationError
+from urllib.parse import urlparse
 
 class AbstractActionData(ABCMeta, type(models.Model)):
     pass
+
 
 class ActionData(models.Model, metaclass=AbstractActionData):
     TYPE = None
@@ -17,11 +19,10 @@ class ActionData(models.Model, metaclass=AbstractActionData):
             if all(
                 getattr(self, field.name) == getattr(old, field.name)
                 for field in self._meta.fields
-                if field.name not in ['updated_at', 'id']
+                if field.name not in ["updated_at", "id"]
             ):
                 return
         super().save(*args, **kwargs)
-
 
     @property
     def type(self):
@@ -39,6 +40,7 @@ class PythonActionData(ActionData):
         default="def get_options(context):\r\n    return ['Option 1', 'Option 2']"
     )
 
+
 class WindowsCMDActionData(ActionData):
     TYPE = "Windows CMD"
     code = models.TextField(default="@echo off\r\n\r\necho Hello world")
@@ -47,6 +49,17 @@ class WindowsCMDActionData(ActionData):
         default="def get_options(context):\r\n    return ['Option 1', 'Option 2']"
     )
 
+
+def validate_url_format(value):
+    parsed = urlparse(value)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise ValidationError("Enter a valid URL (with http:// or https://).")
+
+
 class LinkActionData(ActionData):
     TYPE = "Link"
-    url = models.URLField(default="https://example.com")
+    url = models.CharField(
+        max_length=1048,
+        default="https://example.com",
+        validators=[validate_url_format],
+    )
