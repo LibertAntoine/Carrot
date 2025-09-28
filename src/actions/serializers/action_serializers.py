@@ -27,10 +27,12 @@ class ActionSerializer(serializers.ModelSerializer):
         """Return project thumbnail url."""
         if bool(action.thumbnail):
             request = self.context.get("request")
-            file_name = action.thumbnail.name.split("/")[-1]
-            return request.build_absolute_uri(
-                reverse("actions-thumbnail", args=[action.id, file_name])
-            )
+            if isinstance(action.thumbnail, str):
+                file_url = action.thumbnail
+            else:
+                file_name = action.thumbnail.name.split("/")[-1]
+                file_url = reverse("actions-thumbnail", args=[action.id, file_name])
+            return request.build_absolute_uri(file_url)
         return None
 
     class Meta:
