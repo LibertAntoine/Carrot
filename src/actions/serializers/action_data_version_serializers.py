@@ -5,30 +5,10 @@ from actions.models.action_data_models import (
     WindowsCMDActionData,
     ActionData,
 )
-from users.serializers.user_serializers import ShortUserSerializer
-from users.models import User
 
 
 class ActionDataSerializer(serializers.ModelSerializer):
     """Serializer for ActionData model."""
-
-    def to_representation(self, instance):
-        rep = super().to_representation(instance)
-
-        if vars(instance).get("history_id", None):
-            user_data = None
-            if instance.history_user_id:
-                try:
-                    user = User.objects.get(pk=instance.history_user_id)
-                    user_data = ShortUserSerializer(user, context=self.context).data
-                except User.DoesNotExist:
-                    user_data = None
-            rep["history"] = {
-                "id": instance.history_id,
-                "user": user_data,
-                "date": instance.history_date,
-            }
-        return rep
 
     class Meta:
         abstract = True

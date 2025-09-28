@@ -3,8 +3,8 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import MinLengthValidator
 from django_resized import ResizedImageField
+from simple_history.models import HistoricalRecords
 from users.models import User
-
 
 def generate_thumbnail_path(instance, filename):
     """Generate path for thumbnail"""
@@ -19,6 +19,7 @@ class Action(models.Model):
 
     THUMBNAIL_RESOLUTION = (80, 80)
     THUMBNAIL_FORMAT = "PNG"
+    history = HistoricalRecords(m2m_fields=["users", "groups", "roles"])
     name = models.CharField(
         max_length=25,
         unique=True,

@@ -10,9 +10,7 @@ from users.serializers.role_serializers import RoleDetailedSerializer
 from rest_framework.filters import OrderingFilter, SearchFilter
 from actions.models.action_models import Action
 from users.models import User, Group, Role
-from actions.serializers.action_data_version_serializers import (
-    action_data_serializers
-)
+from actions.serializers.action_data_version_serializers import action_data_serializers
 from actions.serializers.action_serializers import (
     ActionSerializer,
     ActionDetailedSerializer,
@@ -96,30 +94,66 @@ class ActionViewSet(viewsets.ModelViewSet, ActionThumbnailMixin):
                 "roles": role_serializer.data,
             }
         )
-    
+
     @action(methods=["get"], detail=True, permission_classes=[IsAuthenticated])
     def versions(self, request, pk=None):
         action_obj = self.get_object()
-        version_count = action_obj.data.history.count()
+        action_versions = action_obj.history.order_by("history_date")
 
-        versions = action_obj.data.history.order_by("-history_date")[:10]
-        SerializerClass = action_data_serializers.get(
-            action_obj.data.type
-        )
-        serializer = SerializerClass(versions, many=True)
-        for version in serializer.data:
-            if version.get("history"):
-                version["history"]['number'] = version_count
-            version_count -= 1
-        return Response(serializer.data)
+        versions = []
+        version_count = 0
+        for action_version in action_versions:
+            action_version.data = action_obj.data.history.as_of(
+                action_version.history_date
+            )
+            if not action_version.history_change_reason:
+                continue
+            version_count += 1
+
+            users = []
+            for user in action_version.users.all():
+                try:
+                    users.append(User.objects.get(pk=user.user_id))
+                except User.DoesNotExist:
+                    pass
+            action_version.users = users
+
+            groups = []
+            for group in action_version.groups.all():
+                try:
+                    groups.append(Group.objects.get(pk=group.group_id))
+                except Group.DoesNotExist:
+                    pass
+            action_version.groups = groups
+
+            roles = []
+            for role in action_version.roles.all():
+                try:
+                    roles.append(Role.objects.get(pk=role.role_id))
+                except Role.DoesNotExist:
+                    pass
+            action_version.roles = roles
+
+            serializer = ActionDetailedSerializer(
+                action_version, context={"request": request}
+            )
+            data = serializer.data
+            if data.get("history"):
+                data["history"]["number"] = version_count
+            versions.append(data)
+        versions.reverse()
+        return Response(versions)
 
     def get_user_active_actions(self, user):
         queryset = (
-            self.queryset.filter(is_active=True).filter(
+            self.queryset.filter(is_active=True)
+            .filter(
                 Q(users=user)  # Actions linked to user
                 | Q(groups__user_set=user)  # Actions linked to user via group
                 | Q(roles__users=user)  # Actions linked to user via role
-                | Q(roles__groups__user_set=user)  # Actions linked to user via role group
+                | Q(
+                    roles__groups__user_set=user
+                )  # Actions linked to user via role group
                 | Q(is_public=True)  # Actions marked as public
             )
             .distinct()
@@ -127,4 +161,3 @@ class ActionViewSet(viewsets.ModelViewSet, ActionThumbnailMixin):
         )
 
         return self.filter_queryset(queryset)
-

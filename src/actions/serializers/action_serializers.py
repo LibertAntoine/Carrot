@@ -1,12 +1,14 @@
 from django.db import transaction
 from django.urls import reverse
 from rest_framework import serializers
-
+from simple_history.utils import update_change_reason
 from users.serializers.group_serializers import GroupDetailedSerializer
 from users.serializers.user_serializers import UserSerializer
 from users.serializers.role_serializers import RoleDetailedSerializer
+from users.serializers.user_serializers import ShortUserSerializer
 from users.models import User, Group, Role
 from .action_data_version_serializers import action_data_serializers
+
 
 from actions.models.action_models import Action
 
@@ -97,6 +99,25 @@ class ActionPlayableSerializer(ActionSerializer):
 
 class ActionDetailedSerializer(ActionPlayableSerializer):
     """Detailed Serializer for Action model."""
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+
+        if vars(instance).get("history_id", None):
+            user_data = None
+            if instance.history_user_id:
+                try:
+                    user = User.objects.get(pk=instance.history_user_id)
+                    user_data = ShortUserSerializer(user, context=self.context).data
+                except User.DoesNotExist:
+                    user_data = None
+            rep["history"] = {
+                "id": instance.history_id,
+                "user": user_data,
+                "date": instance.history_date,
+            }
+        return rep
+
     create_by = UserSerializer(read_only=True)
     users = UserSerializer(many=True, read_only=True)
     user_ids = serializers.PrimaryKeyRelatedField(
@@ -164,4 +185,7 @@ class ActionDetailedSerializer(ActionPlayableSerializer):
                 data_serializer = data_serializer(data_instance, data)
                 data_serializer.is_valid(raise_exception=True)
                 data_serializer.save()
-            return serializers.ModelSerializer.update(self, instance, validated_data)
+            result = serializers.ModelSerializer.update(self, instance, validated_data)
+            update_change_reason(instance, 'Action edition')
+            return result
+
