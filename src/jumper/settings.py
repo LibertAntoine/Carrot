@@ -24,7 +24,7 @@ dotenv.load_dotenv()
 # CORE SETTINGS
 ###############
 
-DEFAULT_JUMPER_MAX_VERSION = "0.2"
+DEFAULT_JUMPER_MAX_VERSION = "0.3"
 
 INSTALLED_APPS = [
     "auths",
@@ -129,6 +129,7 @@ DATABASES = {
 }
 
 # Object Storage
+# TODO: improve this setting defintions.
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 AWS_ACCESS_KEY_ID = os.environ["S3_ACCESS_KEY_ID"]
 AWS_SECRET_ACCESS_KEY = os.environ["S3_SECRET_ACCESS_KEY"]
@@ -136,7 +137,7 @@ AWS_STORAGE_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
 AWS_S3_ENDPOINT_URL = f"http://{os.environ['S3_ENDPOINT_HOST']}:{os.environ.get('S3_ENDPOINT_PORT', '9000')}"
 AWS_S3_SECURE_URLS = False
 AWS_S3_USE_SSL = False
-
+AWS_REGION = os.environ.get("S3_REGION", "us-east-1")
 ################
 # AUTHENTICATION
 ################

@@ -133,8 +133,6 @@ class ActionViewSet(viewsets.ModelViewSet, ActionThumbnailMixin):
                 except Role.DoesNotExist:
                     pass
             action_version.roles = roles
-            print(action_version.thumbnail)
-            
             serializer = ActionDetailedSerializer(
                 action_version, context={"request": request}
             )

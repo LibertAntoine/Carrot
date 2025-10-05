@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -6,9 +7,13 @@ from django_resized import ResizedImageField
 from simple_history.models import HistoricalRecords
 from users.models import User
 
+THUMBNAILS_URL_BASE = "thumbnails"
+
 def generate_thumbnail_path(instance, filename):
     """Generate path for thumbnail"""
-    return f"thumbnails/{instance.id}/{filename}"
+    ext = filename.split('.')[-1]
+    unique_id = uuid.uuid4().hex
+    return f"{THUMBNAILS_URL_BASE}/{instance.id}/{unique_id}.{ext}"
 
 
 class Action(models.Model):
@@ -72,6 +77,10 @@ class Action(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     data = GenericForeignKey("content_type", "object_id")
+
+    def get_tmp_thumbnail_url(self, ext):
+        """Get the temporary URL for the thumbnail."""
+        return f"{THUMBNAILS_URL_BASE}/{self.id}/tmp.{ext}"
 
     class Meta:
         verbose_name = "Action"
