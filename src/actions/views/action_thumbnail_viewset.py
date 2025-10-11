@@ -23,31 +23,40 @@ class ActionThumbnailMixin:
     def thumbnail(self, request, pk=None, filename=None):
         """Get action thumbnail."""
         thumbnail_action = self.get_object()
-        if not thumbnail_action.thumbnail:
-            return Response("No thumbnail.", status=status.HTTP_404_NOT_FOUND)
+        file_name_without_ext, ext = (filename.rsplit(".", 1) + [""])[:2]
 
-        file_name = thumbnail_action.thumbnail.name.split("/")[-1]
-        file_name_without_ext = filename.rsplit(".", 1)[0]
-        ext = filename.rsplit(".", 1)[-1]
-
+        # Handle temporary thumbnails
         if file_name_without_ext == "tmp":
             tmp_path = thumbnail_action.get_tmp_thumbnail_url(ext)
-            if not default_storage.exists(tmp_path):
-                return Response(
-                    "Temporary thumbnail not found.", status=status.HTTP_404_NOT_FOUND
-                )
             content_type, _ = mimetypes.guess_type(tmp_path)
-            return FileResponse(
-                default_storage.open(tmp_path, "rb"),
-                content_type=content_type or "image/png",
-            )
+            try:
+                return FileResponse(
+                    default_storage.open(tmp_path, "rb"),
+                    content_type=content_type or "image/png",
+                )
+            except FileNotFoundError:
+                return Response(
+                    "Temporary thumbnail not found.",
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+        # Handle permanent thumbnails
         file_path = f"{THUMBNAILS_URL_BASE}/{thumbnail_action.id}/{filename}"
-        if not default_storage.exists(file_path):
-            return Response("Thumbnail not found.", status=status.HTTP_404_NOT_FOUND)
-        return FileResponse(
-            default_storage.open(file_path, "rb"),
-            content_type="image/png",
-        )
+        try:
+            # If the model field matches the requested path → serve directly (fast path)
+            if thumbnail_action.thumbnail.name == file_path:
+                file_obj = thumbnail_action.thumbnail
+                content_type = mimetypes.guess_type(file_obj.name)[0] or "image/png"
+            else:
+                # Otherwise read from storage
+                file_obj = default_storage.open(file_path, "rb")
+                content_type = mimetypes.guess_type(filename)[0] or "image/png"
+            return FileResponse(file_obj, content_type=content_type)
+        except FileNotFoundError:
+            return Response(
+                "Thumbnail not found.",
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
     @action(
         detail=True,
