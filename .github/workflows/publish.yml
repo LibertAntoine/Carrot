@@ -33,12 +33,14 @@ jobs:
           echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
 
       - name: Build Docker image
-        run: docker build \
-              --build-arg VERSION=${{ env.VERSION }} \
-              --build-arg COMMIT=${{ env.COMMIT }} \
-              --build-arg BUILD_DATE=${{ env.BUILD_DATE }} \
-              -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }} \
-              .
+        run: |
+          set -x
+          docker build \
+            --build-arg VERSION=${{ env.VERSION }} \
+            --build-arg COMMIT=${{ env.COMMIT }} \
+            --build-arg BUILD_DATE=${{ env.BUILD_DATE }} \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }} \
+            .
 
       - name: Push Docker image
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
