@@ -140,6 +140,9 @@ def get_app_info(request):
     return Response(
         {
             "name": "Carrot",
+            "version": settings.APP_VERSION,
+            "commit": settings.APP_COMMIT,
+            "build_date": settings.APP_BUILD_DATE,
         }
     )
 

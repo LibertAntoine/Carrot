@@ -24,7 +24,12 @@ dotenv.load_dotenv()
 # CORE SETTINGS
 ###############
 
+
 DEFAULT_JUMPER_MAX_VERSION = "0.3"
+
+APP_VERSION = os.environ.get("APP_VERSION", "dev")
+APP_COMMIT = os.environ.get("APP_COMMIT", "unknown")
+APP_BUILD_DATE = os.environ.get("APP_BUILD_DATE", "unknown")
 
 INSTALLED_APPS = [
     "auths",
