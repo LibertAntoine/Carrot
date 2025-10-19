@@ -7,6 +7,18 @@ class IsAdmin(BasePermission):
     """Custom permission to only allow admins to view or edit it."""
 
     def has_permission(self, request: Request, view: APIView) -> bool:
-        return request.user and (
-            request.user.is_superuser or request.user.is_superuser_group_member
-        )
+        return request.user and request.user.is_admin
+
+
+class IsUserManager(BasePermission):
+    """Custom permission to only allow user managers to view or edit it."""
+
+    def has_permission(self, request: Request, view: APIView) -> bool:
+        return request.user and request.user.is_user_manager
+
+
+class IsActionManager(BasePermission):
+    """Custom permission to only allow action managers to view or edit it."""
+
+    def has_permission(self, request: Request, view: APIView) -> bool:
+        return request.user and request.user.is_action_manager

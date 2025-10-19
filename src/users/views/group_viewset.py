@@ -3,10 +3,12 @@ from rest_framework.permissions import IsAuthenticated
 from django.conf import settings
 
 from jumper.permissions import IsReadOnly
+from users.permissions import IsUserManager, IsActionManager
 from users.models import Group
 from users.serializers.group_serializers import GroupSerializer, GroupDetailedSerializer
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.filters import OrderingFilter, SearchFilter
+
 
 class GroupPagination(PageNumberPagination):
     page_size = settings.DEFAULT_PAGE_SIZE
@@ -19,7 +21,6 @@ class GroupViewSet(viewsets.ModelViewSet):
     model = Group
     pagination_class = GroupPagination
     filter_backends = [OrderingFilter, SearchFilter]
-    permission_classes = [IsAuthenticated, IsReadOnly]
     ordering_fields = [
         "name",
         "user_set",
@@ -28,7 +29,17 @@ class GroupViewSet(viewsets.ModelViewSet):
     ordering = ["name"]
     search_fields = ["name"]
 
+    def get_permissions(self):
+        if self.request.method in ("GET", "HEAD", "OPTIONS"):
+            permission_classes = [IsAuthenticated, IsUserManager | IsActionManager]
+        else:
+            return [IsAuthenticated, IsReadOnly]
+        return [permission() for permission in permission_classes]
+
     def get_serializer_class(self):
-        if self.request.query_params.get("detailed") == "true" and self.action in ['retrieve', 'list']:
+        if self.request.query_params.get("detailed") == "true" and self.action in [
+            "retrieve",
+            "list",
+        ]:
             return GroupDetailedSerializer
         return GroupSerializer

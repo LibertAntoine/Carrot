@@ -1,4 +1,3 @@
-from django.db.models import Q
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
@@ -9,7 +8,7 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from jumper.permissions import IsOwner, IsReadOnly
-from users.permissions import IsAdmin
+from users.permissions import IsActionManager, IsUserManager
 from users.models import User
 from users.serializers.user_serializers import UserSerializer
 from .user_profile_picture_mixin import UserProfilePictureMixin
@@ -31,18 +30,28 @@ class UserViewSet(viewsets.ModelViewSet, UserProfilePictureMixin):
     filter_backends = [OrderingFilter, SearchFilter, DjangoFilterBackend]
     ordering_fields = [
         "username",
-        "is_superuser",
+        "system_role",
         "is_active",
         "creation_date",
     ]
     ordering = ["username"]
-    permission_classes = [IsAuthenticated, IsReadOnly | IsOwner | IsAdmin]
+    permission_classes = [IsAuthenticated, IsReadOnly | IsOwner | IsUserManager]
     search_fields = ["username", "email", "first_name", "last_name"]
-    filterset_fields = ["is_active", "is_superuser"]
+    filterset_fields = ["is_active", "system_role"]
 
     def get_queryset(self):
         queryset = super().get_queryset()
         return queryset
+
+    def get_permissions(self):
+        if self.request.method in ("GET", "HEAD", "OPTIONS"):
+            permission_classes = [
+                IsAuthenticated,
+                IsOwner | IsUserManager | IsActionManager,
+            ]
+        else:
+            permission_classes = [IsAuthenticated, IsOwner | IsUserManager]
+        return [permission() for permission in permission_classes]
 
     @action(methods=["get"], detail=False)
     def me(self, request: Request) -> Response:
@@ -72,8 +81,11 @@ class UserViewSet(viewsets.ModelViewSet, UserProfilePictureMixin):
     def is_last_admin(self, request: Request, pk=None) -> Response:
         """Check if the user is the last admin."""
         user = self.get_object()
-        if user.is_superuser:
+        if user.is_admin:
             return Response(
-                User.objects.filter(is_superuser=True).exclude(pk=pk).count() == 0
+                User.objects.filter(system_role=User.SystemRole.ADMIN)
+                .exclude(pk=pk)
+                .count()
+                == 0
             )
         return Response(False)

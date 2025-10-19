@@ -13,6 +13,7 @@ from actions.serializers.action_thumbnail_serializer import ActionThumbnailSeria
 
 
 class ActionThumbnailMixin:
+    # TODO: Add better access restrictions.
     @action(
         detail=True,
         methods=[HTTPMethod.GET],

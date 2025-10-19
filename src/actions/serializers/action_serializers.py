@@ -11,9 +11,7 @@ from users.serializers.user_serializers import ShortUserSerializer
 from users.models import User, Group, Role
 from .action_data_version_serializers import action_data_serializers
 
-
 from actions.models.action_models import Action, generate_thumbnail_path, THUMBNAILS_URL_BASE
-
 
 class ActionSerializer(serializers.ModelSerializer):
     """Serializer for Action model."""
@@ -147,6 +145,7 @@ class ActionDetailedSerializer(ActionPlayableSerializer):
             "group_ids",
             "role_ids",
             "roles",
+            "workspace",
         ]
         read_only_fields = ActionSerializer.Meta.read_only_fields + [
             "create_by",

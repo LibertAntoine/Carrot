@@ -13,6 +13,8 @@ urlpatterns = [
         path("", include("users.urls")),
         path("", include("auths.urls")),
         path("", include("actions.urls")),
+        path("", include("system.urls")),
+        path("", include("workspaces.urls")),
         path("frontend-update", check_update, name="frontend-update"),
         # Documentation routes
         *swagger_urls

@@ -1,9 +1,10 @@
+from actions.permissions import IsActionWorkspaceMember
 from rest_framework import viewsets
-from django.db.models import Q
+from django.db.models import Q, Exists, OuterRef
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-from users.permissions import IsAdmin
+from users.permissions import IsActionManager
 from users.serializers.user_serializers import UserSerializer
 from users.serializers.group_serializers import GroupDetailedSerializer
 from users.serializers.role_serializers import RoleDetailedSerializer
@@ -16,7 +17,9 @@ from actions.serializers.action_serializers import (
     ActionDetailedSerializer,
     ActionPlayableSerializer,
 )
+from system.models import SystemInfo
 from rest_framework.pagination import PageNumberPagination
+from workspaces.models import Workspace
 from .action_thumbnail_viewset import ActionThumbnailMixin
 
 
@@ -27,9 +30,8 @@ class ActionPagination(PageNumberPagination):
 
 
 class ActionViewSet(viewsets.ModelViewSet, ActionThumbnailMixin):
-    queryset = Action.objects.all()
     model = Action
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAuthenticated, IsActionManager, IsActionWorkspaceMember]
     filter_backends = [OrderingFilter, SearchFilter]
     pagination_class = ActionPagination
     ordering_fields = [
@@ -40,6 +42,30 @@ class ActionViewSet(viewsets.ModelViewSet, ActionThumbnailMixin):
     ]
     ordering = ["name"]
     search_fields = ["name", "description", "is_active", "is_public"]
+
+    def get_queryset(self):
+        if (
+            self.action not in ["list"]
+            or not SystemInfo.get_instance().allow_action_workspaces
+        ):
+            return Action.objects.all()
+        user = self.request.user
+        manager_workspaces = Workspace.objects.filter(
+            Q(users=user)
+            | Q(groups__user_set=user)
+            | Q(roles__users=user)
+            | Q(roles__groups__user_set=user),
+            id=OuterRef("workspace_id"),
+        )
+        qs = (
+            Action.objects.filter(
+                Q(workspace__isnull=True) | Exists(manager_workspaces)
+            )
+            .distinct()
+            .select_related("workspace")
+            .prefetch_related("users", "groups", "roles__users", "roles__groups")
+        )
+        return qs
 
     def get_serializer_class(self):
         if self.request.query_params.get("detailed") == "true":
@@ -145,7 +171,7 @@ class ActionViewSet(viewsets.ModelViewSet, ActionThumbnailMixin):
 
     def get_user_active_actions(self, user):
         queryset = (
-            self.queryset.filter(is_active=True)
+            Action.objects.filter(is_active=True)
             .filter(
                 Q(users=user)  # Actions linked to user
                 | Q(groups__user_set=user)  # Actions linked to user via group
@@ -158,5 +184,4 @@ class ActionViewSet(viewsets.ModelViewSet, ActionThumbnailMixin):
             .distinct()
             .prefetch_related("users", "groups", "roles__users", "roles__groups")
         )
-
         return self.filter_queryset(queryset)

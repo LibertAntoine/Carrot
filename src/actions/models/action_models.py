@@ -73,6 +73,13 @@ class Action(models.Model):
         related_name="actions",
         blank=True,
     )
+    workspace = models.ForeignKey(
+        "workspaces.Workspace",
+        on_delete=models.SET_NULL,
+        related_name="actions",
+        blank=True,
+        null=True,
+    )
 
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()

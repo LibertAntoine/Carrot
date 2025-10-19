@@ -2,7 +2,7 @@ from django.db.models import Count
 from django.conf import settings
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from users.permissions import IsAdmin
+from users.permissions import IsUserManager, IsActionManager
 from rest_framework.filters import OrderingFilter, SearchFilter
 from users.models import Role
 from users.serializers.role_serializers import RoleSerializer, RoleDetailedSerializer
@@ -17,7 +17,7 @@ class RolePagination(PageNumberPagination):
 
 class RoleViewSet(viewsets.ModelViewSet):
     model = Role
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAuthenticated, IsUserManager]
     filter_backends = [OrderingFilter, SearchFilter]
     pagination_class = RolePagination
     ordering_fields = [
@@ -31,6 +31,13 @@ class RoleViewSet(viewsets.ModelViewSet):
     ]
     ordering = ["name"]
     search_fields = ["name", "description"]
+
+    def get_permissions(self):
+        if self.request.method in ("GET", "HEAD", "OPTIONS"):
+            permission_classes = [IsAuthenticated, IsUserManager | IsActionManager]
+        else:
+            permission_classes = [IsAuthenticated, IsUserManager]
+        return [permission() for permission in permission_classes]
 
     def get_queryset(self):
         queryset = Role.objects.all()

@@ -10,5 +10,5 @@ def create_default_user(sender, **kwargs) -> None:
             username=settings.ADMIN_USERNAME,
             email=settings.ADMIN_EMAIL,
             password=make_password(settings.ADMIN_PASSWORD),
-            is_superuser=True,
+            system_role=User.SystemRole.ADMIN,
         )

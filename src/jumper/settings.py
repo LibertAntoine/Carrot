@@ -25,7 +25,7 @@ dotenv.load_dotenv()
 ###############
 
 
-DEFAULT_JUMPER_MAX_VERSION = "0.3"
+DEFAULT_JUMPER_MAX_VERSION = "0.4"
 
 APP_VERSION = os.environ.get("APP_VERSION", "dev")
 APP_COMMIT = os.environ.get("APP_COMMIT", "unknown")
@@ -35,6 +35,8 @@ INSTALLED_APPS = [
     "auths",
     "users",
     "actions",
+    "system",
+    "workspaces",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",

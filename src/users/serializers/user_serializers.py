@@ -62,7 +62,7 @@ class UserSerializer(serializers.ModelSerializer):
             "is_active",
             "password",
             "profile_picture_url",
-            "is_superuser",
+            "system_role",
             "external_id",
             "groups",
             "is_superuser_group_member",

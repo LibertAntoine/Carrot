@@ -26,6 +26,12 @@ class User(AbstractSCIMUserMixin, AbstractUser):
     This model is used to extend the default user model.
     """
 
+    class SystemRole(models.TextChoices):
+        ADMIN = "admin", "Admin"
+        ACTION_MANAGER = "action_manager", "Action Manager"
+        USER_MANAGER = "user_manager", "User Manager"
+        USER = "user", "User"
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
 
@@ -36,6 +42,11 @@ class User(AbstractSCIMUserMixin, AbstractUser):
         max_length=40,
         unique=True,
         validators=[MinLengthValidator(4)],
+    )
+    system_role = models.CharField(
+        max_length=20,
+        choices=SystemRole.choices,
+        default=SystemRole.USER,
     )
     email = models.EmailField(unique=True)
     groups = models.ManyToManyField(
@@ -71,7 +82,17 @@ class User(AbstractSCIMUserMixin, AbstractUser):
 
     @property
     def is_admin(self):
-        return self.is_superuser or self.is_superuser_group_member
+        return (
+            self.system_role == self.SystemRole.ADMIN or self.is_superuser_group_member
+        )
+
+    @property
+    def is_action_manager(self):
+        return self.system_role == self.SystemRole.ACTION_MANAGER or self.is_admin
+
+    @property
+    def is_user_manager(self):
+        return self.system_role == self.SystemRole.USER_MANAGER or self.is_admin
 
     class Meta:
         verbose_name = "User"
@@ -80,8 +101,13 @@ class User(AbstractSCIMUserMixin, AbstractUser):
 
 @receiver(pre_delete, sender=User)
 def check_last_admin_delete(sender, instance, **kwargs):
-    if instance.is_superuser:
-        if User.objects.filter(is_superuser=True).exclude(pk=instance.pk).count() == 0:
+    if instance.is_admin:
+        if (
+            User.objects.filter(system_role=User.SystemRole.ADMIN)
+            .exclude(pk=instance.pk)
+            .count()
+            == 0
+        ):
             raise PermissionDenied("Can't delete last admin user.")
 
 
@@ -90,10 +116,15 @@ def check_last_admin_update(sender, instance, **kwargs):
     if not instance.pk:
         return
     old_instance = User.objects.get(pk=instance.pk)
-    if old_instance.is_superuser and not instance.is_superuser:
-        if User.objects.filter(is_superuser=True).exclude(pk=instance.pk).count() == 0:
+    if old_instance.is_admin and not instance.is_admin:
+        if (
+            User.objects.filter(system_role=User.SystemRole.ADMIN)
+            .exclude(pk=instance.pk)
+            .count()
+            == 0
+        ):
             raise PermissionDenied(
-                "Can't set 'is_superuser' to false for the last admin user."
+                "Can't set 'is_admin' to false for the last admin user."
             )
 
 
@@ -120,7 +151,6 @@ class Role(models.Model):
 
     users = models.ManyToManyField(User, related_name="roles", blank=True)
     groups = models.ManyToManyField(Group, related_name="roles", blank=True)
-    # actions = models.ManyToManyField("actions.Action", related_name="roles", blank=True)
 
     creation_date = models.DateTimeField(auto_now_add=True)
     last_update = models.DateTimeField(auto_now=True)
