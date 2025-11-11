@@ -26,6 +26,8 @@ filePathFactory = FileFieldPathFactory(
     allowed_extensions=["jpg", "jpeg", "png"],
 )
 
+def background_upload_to(instance, filename):
+    return filePathFactory.build_instance_path(instance, filename)
 
 class SystemInfo(SingletonModel):
     allow_action_workspaces = models.BooleanField(default=False)
@@ -35,7 +37,7 @@ class SystemInfo(SingletonModel):
         size=settings.GALLERY_BACKGROUND_IMAGE_RESOLUTION,
         crop=["middle", "center"],
         force_format=settings.GALLERY_BACKGROUND_IMAGE_FORMAT,
-        upload_to=filePathFactory.build_instance_path,
+        upload_to=background_upload_to,
         blank=True,
         null=True,
     )

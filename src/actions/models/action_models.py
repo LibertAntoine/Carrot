@@ -80,6 +80,10 @@ class Action(models.Model):
         blank=True,
         null=True,
     )
+    section = models.CharField(
+        max_length=100,
+        blank=True,
+    )
 
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()

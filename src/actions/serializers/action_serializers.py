@@ -45,6 +45,7 @@ class ActionSerializer(serializers.ModelSerializer):
             "is_active",
             "is_public",
             "creation_date",
+            "section",
             "last_update",
             "data",
             "thumbnail_url",

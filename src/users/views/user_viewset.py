@@ -8,7 +8,7 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from jumper.permissions import IsOwner, IsReadOnly
-from users.permissions import IsActionManager, IsUserManager
+from users.permissions import IsActionManager, IsAdmin, IsUserManager
 from users.models import User
 from users.serializers.user_serializers import UserSerializer
 from .user_profile_picture_mixin import UserProfilePictureMixin
@@ -44,7 +44,9 @@ class UserViewSet(viewsets.ModelViewSet, UserProfilePictureMixin):
         return queryset
 
     def get_permissions(self):
-        if self.request.method in ("GET", "HEAD", "OPTIONS"):
+        if self.request.method == "OPTIONS":
+            return []
+        if self.request.method in ("GET", "HEAD"):
             permission_classes = [
                 IsAuthenticated,
                 IsOwner | IsUserManager | IsActionManager,

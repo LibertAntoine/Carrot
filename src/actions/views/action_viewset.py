@@ -41,7 +41,7 @@ class ActionViewSet(viewsets.ModelViewSet, ActionThumbnailMixin):
         "create_by",
     ]
     ordering = ["name"]
-    search_fields = ["name", "description", "is_active", "is_public"]
+    search_fields = ["name", "description", "is_active", "is_public", "section"]
 
     def get_queryset(self):
         if (

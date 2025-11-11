@@ -1,6 +1,6 @@
 import uuid
 from django.db import models
-from django.db.models.signals import pre_delete, pre_save
+from django.db.models.signals import pre_delete, pre_save, post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import AbstractUser
 from django_group_model.models import AbstractGroup
@@ -160,11 +160,11 @@ class Role(models.Model):
     )
 
 
-filePathFactory = FileFieldPathFactory(
-    base_path="user-background",
-    allowed_extensions=["jpg", "jpeg", "png"],
-)
-
+def user_background_upload_to(instance, filename):
+    return FileFieldPathFactory(
+        base_path="user-background",
+        allowed_extensions=["jpg", "jpeg", "png"],
+    ).build_instance_path(instance, filename)
 
 class UserPreferences(models.Model):
     user = models.OneToOneField(
@@ -175,13 +175,14 @@ class UserPreferences(models.Model):
         size=settings.GALLERY_BACKGROUND_IMAGE_RESOLUTION,
         crop=["middle", "center"],
         force_format=settings.GALLERY_BACKGROUND_IMAGE_FORMAT,
-        upload_to=filePathFactory.build_instance_path,
+        upload_to=user_background_upload_to,
         blank=True,
         null=True,
     )
 
 
-@receiver(pre_save, sender=User)
-def create_user_preferences(sender, instance, **kwargs):
-    if not instance.pk:
+
+@receiver(post_save, sender=User)
+def create_user_preferences(sender, instance, created, **kwargs):
+    if created:
         UserPreferences.objects.create(user=instance)
