@@ -1,0 +1,74 @@
+from urllib import response
+from jumper.permissions import IsOwner
+from jumper.storage_utils.presigned_url import generate_presigned_url
+from users.models import UserPreferences
+from users.serializers.user_preferences_serializers import (
+    UserPreferencesSerializer,
+    UserPreferenceCustomBackgroundImageSerializer,
+)
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from users.permissions import IsAdmin
+from http import HTTPMethod
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.decorators import action
+
+
+class UserPreferencesViewSet(viewsets.ModelViewSet):
+    """API endpoint that allows user preferences to be viewed or edited."""
+
+    queryset = UserPreferences.objects.all()
+    model = UserPreferences
+    serializer_class = UserPreferencesSerializer
+    permission_classes = [IsAuthenticated, IsOwner | IsAdmin]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.user.is_admin:
+            return queryset
+        return queryset.filter(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        return response.Response(
+            {"detail": "Method 'POST' not allowed."},
+            status=response.status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        return response.Response(
+            {"detail": "Method 'DELETE' not allowed."},
+            status=response.status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    @action(
+        detail=True,
+        methods=[HTTPMethod.PUT, HTTPMethod.DELETE],
+        url_name="background-image",
+        url_path="background-image",
+    )
+    def set_background_image(self, request, pk=None):
+        """Update user background image."""
+        userPreferences = self.get_object()
+        if request.method == HTTPMethod.DELETE:
+            userPreferences.custom_background_image.delete()
+            userPreferences.save()
+            return Response(
+                "Background image deleted.", status=status.HTTP_204_NO_CONTENT
+            )
+        else:
+            serializer = UserPreferenceCustomBackgroundImageSerializer(
+                data=request.data
+            )
+            serializer.is_valid(raise_exception=True)
+            userPreferences.custom_background_image = serializer.validated_data[
+                "custom_background_image"
+            ]
+            userPreferences.save()
+            return Response(
+                {
+                    "custom_background_image_url": generate_presigned_url(
+                        userPreferences.custom_background_image.name
+                    )
+                }
+            )

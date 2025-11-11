@@ -1,12 +1,17 @@
 from rest_framework import routers
 from django.urls import path, include
 from django.conf import settings
-from .views import user_viewset, group_viewset, role_viewset
+from .views import user_viewset, group_viewset, role_viewset, user_preferences_viewset
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.register(r"users", user_viewset.UserViewSet, basename="user")
 router.register(r"groups", group_viewset.GroupViewSet, basename="group")
 router.register(r"roles", role_viewset.RoleViewSet, basename="role")
+router.register(
+    r"user-preferences",
+    user_preferences_viewset.UserPreferencesViewSet,
+    basename="user-preferences",
+)
 
 urlpatterns = [*router.urls]
 

@@ -1,4 +1,8 @@
 from django.db import models
+from jumper.storage_utils.file_field import FileFieldPathFactory
+from django_resized import ResizedImageField
+from django.conf import settings
+
 
 class SingletonModel(models.Model):
     class Meta:
@@ -17,5 +21,22 @@ class SingletonModel(models.Model):
         return obj
 
 
+filePathFactory = FileFieldPathFactory(
+    base_path="background",
+    allowed_extensions=["jpg", "jpeg", "png"],
+)
+
+
 class SystemInfo(SingletonModel):
     allow_action_workspaces = models.BooleanField(default=False)
+
+    allow_background_image = models.BooleanField(default=False)
+    default_background_image = ResizedImageField(
+        size=settings.GALLERY_BACKGROUND_IMAGE_RESOLUTION,
+        crop=["middle", "center"],
+        force_format=settings.GALLERY_BACKGROUND_IMAGE_FORMAT,
+        upload_to=filePathFactory.build_instance_path,
+        blank=True,
+        null=True,
+    )
+    allow_user_custom_background_image = models.BooleanField(default=False)

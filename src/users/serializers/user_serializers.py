@@ -3,6 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
+from .user_preferences_serializers import UserPreferencesSerializer
 
 from users.models import User
 
@@ -47,7 +48,9 @@ class UserSerializer(serializers.ModelSerializer):
     profile_picture_url = serializers.SerializerMethodField()
     groups = serializers.SerializerMethodField()
     external_id = serializers.SerializerMethodField()
+    preferences = UserPreferencesSerializer(read_only=True)
     get_external_id = lambda self, obj: obj.scim_external_id
+
 
     class Meta:
         model = User
@@ -65,6 +68,7 @@ class UserSerializer(serializers.ModelSerializer):
             "system_role",
             "external_id",
             "groups",
+            "preferences",
             "is_superuser_group_member",
         ]
         read_only_fields = [
@@ -74,6 +78,7 @@ class UserSerializer(serializers.ModelSerializer):
             "profile_picture_url",
             "external_id",
             "groups",
+            "preferences",
             "is_superuser_group_member",
         ]
         extra_kwargs = {"password": {"write_only": True}}
@@ -166,3 +171,4 @@ class UserProfilePictureSerializer(serializers.ModelSerializer):
                 f"Image size must be less than {self.PICTURE_MAX_SIZE_MB}Mo."
             )
         return value
+    

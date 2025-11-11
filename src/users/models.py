@@ -9,6 +9,7 @@ from django.core.exceptions import PermissionDenied
 from django_resized import ResizedImageField
 from django.conf import settings
 from django_scim.models import AbstractSCIMGroupMixin, AbstractSCIMUserMixin
+from jumper.storage_utils.file_field import FileFieldPathFactory
 
 
 class Group(AbstractSCIMGroupMixin, AbstractGroup):
@@ -157,3 +158,30 @@ class Role(models.Model):
     create_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, related_name="roles_created", null=True
     )
+
+
+filePathFactory = FileFieldPathFactory(
+    base_path="user-background",
+    allowed_extensions=["jpg", "jpeg", "png"],
+)
+
+
+class UserPreferences(models.Model):
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="preferences"
+    )
+    disable_default_background_image = models.BooleanField(default=False)
+    custom_background_image = ResizedImageField(
+        size=settings.GALLERY_BACKGROUND_IMAGE_RESOLUTION,
+        crop=["middle", "center"],
+        force_format=settings.GALLERY_BACKGROUND_IMAGE_FORMAT,
+        upload_to=filePathFactory.build_instance_path,
+        blank=True,
+        null=True,
+    )
+
+
+@receiver(pre_save, sender=User)
+def create_user_preferences(sender, instance, **kwargs):
+    if not instance.pk:
+        UserPreferences.objects.create(user=instance)
