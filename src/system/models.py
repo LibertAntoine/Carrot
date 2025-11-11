@@ -40,3 +40,6 @@ class SystemInfo(SingletonModel):
         null=True,
     )
     allow_user_custom_background_image = models.BooleanField(default=False)
+
+    allow_action_sections = models.BooleanField(default=False)
+    allow_users_to_hide_actions = models.BooleanField(default=False)
