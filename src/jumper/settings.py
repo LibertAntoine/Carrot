@@ -345,7 +345,7 @@ DJANGO_REST_PASSWORDRESET_NO_INFORMATION_LEAKAGE = True
 
 ALLOW_FRONTEND_UPDATES = os.environ.get("ALLOW_FRONTEND_UPDATES", "True") == "True"
 JUMPER_REPOSITORY_URL = os.environ.get(
-    "JUMPER_REPOSITORY_URL", "https://api.github.com/repos/LibertAntoine/Jumper"
+    "JUMPER_REPOSITORY_URL", "https://github.com/Jumper-Carrot/Jumper"
 )
 MAX_ALLOWED_VERSION = os.environ.get("MAX_ALLOWED_VERSION", DEFAULT_JUMPER_MAX_VERSION)
 
