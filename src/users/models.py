@@ -9,7 +9,7 @@ from django.core.exceptions import PermissionDenied
 from django_resized import ResizedImageField
 from django.conf import settings
 from django_scim.models import AbstractSCIMGroupMixin, AbstractSCIMUserMixin
-from jumper.storage_utils.file_field import FileFieldPathFactory
+from jumper.services.storage_utils.file_field import FileFieldPathFactory
 
 
 class Group(AbstractSCIMGroupMixin, AbstractGroup):
@@ -160,11 +160,19 @@ class Role(models.Model):
     )
 
 
-def user_background_upload_to(instance, filename):
-    return FileFieldPathFactory(
-        base_path="user-background",
-        allowed_extensions=["jpg", "jpeg", "png"],
-    ).build_instance_path(instance, filename)
+
+def generate_custom_background_path(instance, filename, uuid_value=None):
+    """Generate path for thumbnail"""
+    ext = filename.split('.')[-1]
+    unique_id = uuid_value or uuid.uuid4().hex
+    base_key = get_custom_background_base_key(instance)
+    return f"{base_key}{unique_id}.{ext}"
+
+
+def get_custom_background_base_key(instance):
+    """Get the base key for thumbnails of an action."""
+    return f"v1/user-preferences/{instance.user.id}/backgrounds/"
+
 
 class UserPreferences(models.Model):
     user = models.OneToOneField(
@@ -175,14 +183,14 @@ class UserPreferences(models.Model):
         size=settings.GALLERY_BACKGROUND_IMAGE_RESOLUTION,
         crop=["middle", "center"],
         force_format=settings.GALLERY_BACKGROUND_IMAGE_FORMAT,
-        upload_to=user_background_upload_to,
+        upload_to=generate_custom_background_path,
         blank=True,
         null=True,
     )
-
 
 
 @receiver(post_save, sender=User)
 def create_user_preferences(sender, instance, created, **kwargs):
     if created:
         UserPreferences.objects.create(user=instance)
+

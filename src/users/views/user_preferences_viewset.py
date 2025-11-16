@@ -1,6 +1,10 @@
+import mimetypes
 from urllib import response
-from jumper.permissions import IsOwner
-from jumper.storage_utils.presigned_url import generate_presigned_url
+
+from django.forms import ValidationError
+from django.http import FileResponse
+from jumper.permissions import IsFileAuthenticated, IsOwner
+from jumper.services.storage_utils.presigned_url import generate_presigned_url
 from users.models import UserPreferences
 from users.serializers.user_preferences_serializers import (
     UserPreferencesSerializer,
@@ -68,7 +72,31 @@ class UserPreferencesViewSet(viewsets.ModelViewSet):
             return Response(
                 {
                     "custom_background_image_url": generate_presigned_url(
-                        userPreferences.custom_background_image.name
+                        userPreferences.custom_background_image.name,
+                        request,
                     )
                 }
             )
+
+    @action(
+        detail=True,
+        methods=[HTTPMethod.GET],
+        url_name="backgrounds",
+        permission_classes=[IsAuthenticated | IsFileAuthenticated],
+        url_path=r"backgrounds/(?P<filename>[\w\-\.]+)",
+    )
+    def user_preference_background_file(self, request, pk=None, filename=None):
+        """Get user preference background."""
+        user_preferences = self.get_object()
+        if (
+            request.file_key
+            and request.file_key != user_preferences.custom_background_image.name
+        ):
+            raise ValidationError("Invalid file key provided.")
+        content_type = (
+            mimetypes.guess_type(user_preferences.custom_background_image.name)[0]
+            or "application/octet-stream"
+        )
+        return FileResponse(
+            user_preferences.custom_background_image, content_type=content_type
+        )

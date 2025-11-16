@@ -1,9 +1,8 @@
+import logging
 from django.db import transaction
-from django.urls import reverse
 from rest_framework import serializers
 from simple_history.utils import update_change_reason
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
+from jumper.services.storage_utils import generate_presigned_url
 from users.serializers.group_serializers import GroupDetailedSerializer
 from users.serializers.user_serializers import UserSerializer
 from users.serializers.role_serializers import RoleDetailedSerializer
@@ -11,7 +10,10 @@ from users.serializers.user_serializers import ShortUserSerializer
 from users.models import User, Group, Role
 from .action_data_version_serializers import action_data_serializers
 
-from actions.models.action_models import Action, generate_thumbnail_path, THUMBNAILS_URL_BASE
+from actions.models.action_models import Action, get_thumbnail_base_key
+
+logger = logging.getLogger("django")
+
 
 class ActionSerializer(serializers.ModelSerializer):
     """Serializer for Action model."""
@@ -26,14 +28,12 @@ class ActionSerializer(serializers.ModelSerializer):
     def get_thumbnail_url(self, action: Action) -> str:
         """Return project thumbnail url."""
         if bool(action.thumbnail):
-            request = self.context.get("request")
-            file_name = (
-                action.thumbnail.split("/")[-1] # If it's an historic record
+            key = (
+                action.thumbnail  # If it's an historic record
                 if isinstance(action.thumbnail, str)
-                else action.thumbnail.name.split("/")[-1]
+                else action.thumbnail.name
             )
-            file_url = reverse("actions-thumbnail", args=[action.id, file_name])
-            return request.build_absolute_uri(file_url)
+            return generate_presigned_url(key, self.context['request'])
         return None
 
     class Meta:
@@ -181,20 +181,17 @@ class ActionDetailedSerializer(ActionPlayableSerializer):
                 data_serializer = data_serializer(data_instance, data)
                 data_serializer.is_valid(raise_exception=True)
                 data_serializer.save()
-            new_thumbnail_url = self.initial_data.get("thumbnail_url")
-            if new_thumbnail_url:
-                filename = new_thumbnail_url.split("/")[-1]
-                ext = filename.rsplit(".", 1)[-1]
-                file_path = f"{THUMBNAILS_URL_BASE}/{instance.id}/{filename}"
-                if default_storage.exists(file_path):
-                    with default_storage.open(file_path, "rb") as f:
-                        content = f.read()
-                    final_path = generate_thumbnail_path(
-                        instance, f"thumbnail.{ext}"
-                    )
-                    instance.thumbnail.save(
-                        final_path, ContentFile(content), save=False
-                    )
+            new_key = self.initial_data.get("thumbnail_key")
+            logger.warning(self.initial_data)
+            if new_key:
+                expected_prefix = get_thumbnail_base_key(instance)
+                if not new_key.startswith(expected_prefix):
+                    raise serializers.ValidationError({
+                        "thumbnail_key": (
+                            f"Invalid key. Expected it to start with '{expected_prefix}'"
+                        )
+                    })
+                instance.thumbnail.name = new_key
             result = serializers.ModelSerializer.update(self, instance, validated_data)
             update_change_reason(instance, "Action edition")
             return result

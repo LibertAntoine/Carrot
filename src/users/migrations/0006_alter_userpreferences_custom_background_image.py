@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                 quality=-1,
                 scale=None,
                 size=(1920, 1080),
-                upload_to=users.models.user_background_upload_to,
+                upload_to=users.models.generate_custom_background_path,
             ),
         ),
     ]

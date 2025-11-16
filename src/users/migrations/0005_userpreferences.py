@@ -4,8 +4,7 @@ from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
 import django_resized.forms
-import jumper.storage_utils.file_field
-
+import users.models
 
 def create_user_preferences_for_existing_users(apps, schema_editor):
     User = apps.get_model("users", "User")
@@ -47,7 +46,7 @@ class Migration(migrations.Migration):
                         quality=-1,
                         scale=None,
                         size=(1920, 1080),
-                        upload_to=jumper.storage_utils.file_field.FileFieldPathFactory.build_instance_path,
+                        upload_to=users.models.generate_custom_background_path,
                     ),
                 ),
                 (

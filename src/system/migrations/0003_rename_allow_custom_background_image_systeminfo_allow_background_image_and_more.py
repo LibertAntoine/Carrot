@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 import django_resized.forms
-import jumper.storage_utils.file_field
+import system.models
 
 
 class Migration(migrations.Migration):
@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
                 quality=-1,
                 scale=None,
                 size=(1920, 1080),
-                upload_to=jumper.storage_utils.file_field.FileFieldPathFactory.build_instance_path,
+                upload_to=system.models.generate_default_background_path,
             ),
         ),
     ]

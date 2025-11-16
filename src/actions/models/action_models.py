@@ -7,13 +7,18 @@ from django_resized import ResizedImageField
 from simple_history.models import HistoricalRecords
 from users.models import User
 
-THUMBNAILS_URL_BASE = "thumbnails"
 
-def generate_thumbnail_path(instance, filename):
+def generate_thumbnail_path(instance, filename, uuid_value=None):
     """Generate path for thumbnail"""
     ext = filename.split('.')[-1]
-    unique_id = uuid.uuid4().hex
-    return f"{THUMBNAILS_URL_BASE}/{instance.id}/{unique_id}.{ext}"
+    unique_id = uuid_value or uuid.uuid4().hex
+    base_key = get_thumbnail_base_key(instance)
+    return f"{base_key}{unique_id}.{ext}"
+
+
+def get_thumbnail_base_key(instance):
+    """Get the base key for thumbnails of an action."""
+    return f"v1/actions/{instance.id}/thumbnails/"
 
 
 class Action(models.Model):
@@ -88,10 +93,6 @@ class Action(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     data = GenericForeignKey("content_type", "object_id")
-
-    def get_tmp_thumbnail_url(self, ext):
-        """Get the temporary URL for the thumbnail."""
-        return f"{THUMBNAILS_URL_BASE}/{self.id}/tmp.{ext}"
 
     class Meta:
         verbose_name = "Action"

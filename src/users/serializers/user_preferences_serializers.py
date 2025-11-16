@@ -1,6 +1,6 @@
 from users.models import UserPreferences
 from rest_framework import serializers
-from jumper.storage_utils import generate_presigned_url
+from jumper.services.storage_utils import generate_presigned_url
 from rest_framework.exceptions import ValidationError
 
 
@@ -12,7 +12,7 @@ class UserPreferencesSerializer(serializers.ModelSerializer):
     def get_custom_background_image_url(self, obj: UserPreferences) -> str:
         """Return user's custom background image url."""
         if bool(obj.custom_background_image):
-            return generate_presigned_url(obj.custom_background_image.name)
+            return generate_presigned_url(obj.custom_background_image.name, self.context['request'])
         return None
 
     class Meta:

@@ -1,17 +1,20 @@
 from http import HTTPMethod
+import mimetypes
+from django.http import FileResponse
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
 from users.permissions import IsAdmin
-from jumper.storage_utils import generate_presigned_url
+from rest_framework.decorators import api_view, permission_classes
+from jumper.permissions import IsFileAuthenticated
+from jumper.services.storage_utils import generate_presigned_url
 from .models import SystemInfo
 from .serializers import (
     SystemInfoSerializer,
     SystemInfoDefaultBackgroundImageSerializer,
 )
-
 
 class SystemInfoView(APIView):
     """Get or update system info."""
@@ -25,12 +28,14 @@ class SystemInfoView(APIView):
 
     def get(self, request):
         system_info = SystemInfo.get_instance()
-        serializer = SystemInfoSerializer(system_info)
+        serializer = SystemInfoSerializer(system_info, context={"request": request})
         return Response(serializer.data)
 
     def patch(self, request):
         system_info = SystemInfo.get_instance()
-        serializer = SystemInfoSerializer(system_info, data=request.data, partial=True)
+        serializer = SystemInfoSerializer(
+            system_info, data=request.data, partial=True, context={"request": request}
+        )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -40,8 +45,25 @@ class SystemInfoView(APIView):
         return self.patch(request)
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated | IsFileAuthenticated])
+def system_default_background_file(request, pk=None, filename=None):
+    """Get system default background."""
+    system_info = SystemInfo.get_instance()
+    if (
+        request.file_key
+        and request.file_key != system_info.default_background_image.name
+    ):
+        raise ValidationError("Invalid file key provided.")
+    content_type = mimetypes.guess_type(
+        system_info.default_background_image.name
+    )[0] or "application/octet-stream"
+    return FileResponse(
+        system_info.default_background_image, content_type=content_type
+    )
+
 class SystemDefaultBackgroundView(APIView):
-    permission_classes = [IsAdmin]
+    permission_classes = [IsAuthenticated | IsFileAuthenticated, IsAdmin]
 
     def put(self, request):
         system_info = SystemInfo.get_instance()
@@ -54,7 +76,8 @@ class SystemDefaultBackgroundView(APIView):
         return Response(
             {
                 "default_background_image_url": generate_presigned_url(
-                    system_info.default_background_image.name
+                    system_info.default_background_image.name,
+                    request,
                 )
             }
         )
