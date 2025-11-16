@@ -101,8 +101,8 @@ class SCIMServiceProviderConfig(DefaultSCIMServiceProviderConfig):
 
 class SCIMAuthCheckMiddleware:
     """
-    An example of overriding the SCIM middleware to log more data
-    around each request.
+    Middleware to check for SCIM Bearer Token in Authorization header.
+    401 Unauthorized response is returned if the token is missing or invalid.
     """
 
     def __init__(self, get_response):

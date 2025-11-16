@@ -1,34 +1,30 @@
 from django.urls import path, include
-from django_rest_passwordreset.views import (
-    reset_password_confirm,
-    reset_password_request_token,
-    reset_password_validate_token,
-)
 from django.conf import settings
-from .oidc import OIDCAuthRequest, OIDCAuthCallback
-from .views import (
-    get_config,
-    login_view,
-    set_tokens_view,
+from .reset_password.reset_password_views import (
+    request_reset_password,
+    confirm_reset_password,
+    verify_reset_password_otp,
+)
+from .oidc.oidc_auth_views import OIDCAuthRequest, OIDCAuthCallback
+from .jwt.jwt_auth_views import (
+    login,
+    set_tokens,
     CookieTokenRefreshView,
-    logout_view,
+    logout,
     get_auth_status,
-    get_app_info
 )
 
 
 urlpatterns = [
     # Authentication configuration getter route
     path("auth/status", get_auth_status, name="auth-status"),
-    path("auth/config", get_config, name="auth-config"),
-    path("auth/logout", logout_view, name="token_verify"),
+    path("auth/logout", logout, name="token_verify"),
     path("auth/refresh", CookieTokenRefreshView.as_view(), name="token_refresh"),
-    path("info", get_app_info, name="app-info")
 ]
 
-if settings.JWT_ENABLED:
+if getattr(settings, "PASSWORD_BASED_AUTHENTICATION", True):
     urlpatterns += [
-        path("auth", login_view, name="token_obtain_pair"),
+        path("auth", login, name="token_obtain_pair"),
         path(
             "auth/password-reset/request",
             request_reset_password,
@@ -46,9 +42,9 @@ if settings.JWT_ENABLED:
         ),
     ]
 
-if settings.OIDC_ENABLED:
+if getattr(settings, "OIDC_ENABLED", False):
     urlpatterns += [
-        path("auth/set-tokens", set_tokens_view, name="token_obtain_pair"),
+        path("auth/set-tokens", set_tokens, name="token_obtain_pair"),
         path("oidc/auth/", OIDCAuthRequest.as_view(), name="oidc_auth_request"),
         path("oidc/callback/", OIDCAuthCallback.as_view(), name="oidc_auth_callback"),
         path("oidc/", include("mozilla_django_oidc.urls")),

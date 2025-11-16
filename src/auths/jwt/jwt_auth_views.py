@@ -1,8 +1,10 @@
+import logging
 from django.contrib.auth import authenticate
+from django.conf import settings
+from rest_framework import serializers
 from rest_framework.decorators import (
     api_view,
     permission_classes,
-    authentication_classes,
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -12,14 +14,19 @@ from rest_framework_simplejwt import (
     serializers as jwt_serializers,
     exceptions as jwt_exceptions,
 )
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.conf import settings
-from .jwt import set_jwt_tokens, get_tokens_for_user, get_cookie_params
+from .jwt_utils import (
+    set_jwt_tokens,
+    get_tokens_for_user,
+    backlist_tokens,
+    BROWSER_USER_AGENTS,
+)
 
 
-# JWT Views
+logger = logging.getLogger("django")
+
+
 @api_view(["POST"])
-def login_view(request):
+def login(request):
     data = request.data
     response = Response()
     email = data.get("email", None)
@@ -43,7 +50,7 @@ def login_view(request):
 
 
 @api_view(["POST"])
-def set_tokens_view(request):
+def set_tokens(request):
     data = request.data
     response = Response()
     access_token = data.get("access", None)
@@ -63,37 +70,61 @@ def set_tokens_view(request):
             )
 
 
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(required=False)
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def logout_view(request):
-    refresh_token = request.COOKIES.get(settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH"])
-    try:
-        token = RefreshToken(refresh_token)
-        token.blacklist()
-    except jwt_exceptions.TokenError:
-        pass
-    cookie_params = get_cookie_params()
+def logout(request):
+    if (
+        settings.SIMPLE_JWT.get("AUTH_COOKIE_ENABLED", False)
+        and request.user_agent.browser.family in BROWSER_USER_AGENTS
+    ):
+        refresh_token = request.COOKIES.get(
+            settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_NAME"]
+        )
+    else:
+        serializer = LogoutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        refresh_token = serializer.validated_data.get("refresh", None)
+    if not refresh_token:
+        return Response(
+            {"refresh": "This field is required."}, status=status.HTTP_400_BAD_REQUEST
+        )
+    backlist_tokens([refresh_token])
     response = Response(status=status.HTTP_204_NO_CONTENT)
-    response.delete_cookie(key=settings.SIMPLE_JWT["AUTH_COOKIE"], **cookie_params)
-    response.delete_cookie(
-        key=settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH"], **cookie_params
-    )
+    if settings.SIMPLE_JWT.get("AUTH_COOKIE_ENABLED", False):
+        cookie_params = {
+            "path": settings.SIMPLE_JWT["AUTH_COOKIE_PATH"],
+            "domain": settings.SIMPLE_JWT["AUTH_COOKIE_DOMAIN"],
+        }
+        response.delete_cookie(
+            key=settings.SIMPLE_JWT["AUTH_COOKIE_NAME"], **cookie_params
+        )
+        response.delete_cookie(
+            key=settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_NAME"], **cookie_params
+        )
     return response
 
 
 class CookieTokenRefreshSerializer(jwt_serializers.TokenRefreshSerializer):
+    refresh = serializers.CharField(required=False)
+
     def validate(self, attrs):
-        refresh_token = self.context["request"].COOKIES.get(
-            settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH"]
-        )
-        if refresh_token:
-            attrs["refresh"] = self.context["request"].COOKIES.get(
-                settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH"]
+        if settings.SIMPLE_JWT.get("AUTH_COOKIE_ENABLED", False):
+            refresh_token = self.context["request"].COOKIES.get(
+                settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_NAME"]
             )
+            if refresh_token:
+                attrs["refresh"] = self.context["request"].COOKIES.get(
+                    settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_NAME"]
+                )
+            logger.warning(refresh_token)
         if attrs.get("refresh"):
             return super().validate(attrs)
         else:
-            raise jwt_exceptions.InvalidToken(f"No valid refresh token found.")
+            raise serializers.ValidationError({"refresh": "This field is required."})
 
 
 class CookieTokenRefreshView(jwt_views.TokenRefreshView):
@@ -102,53 +133,15 @@ class CookieTokenRefreshView(jwt_views.TokenRefreshView):
     def finalize_response(self, request, response, *args, **kwargs):
         if response.data.get("access"):
             set_jwt_tokens(response.data, response, request, with_refresh=False)
-        return super().finalize_response(request, response, *args, **kwargs)
-
-
-# Config Views
-@api_view(["GET"])
-@authentication_classes([])
-def get_config(request):
-    providers = []
-
-    if settings.JWT_ENABLED:
-        providers.append(
-            {
-                "id": "email",
-                "name": "Email",
-                "authUrl": "/auth",
-                "logoutUrl": "/auth/logout",
-            }
-        )
-
-    if settings.OIDC_ENABLED:
-        providers.append(
-            {
-                "id": "oidc",
-                "name": settings.OIDC_PROVIDER_NAME,
-                "authUrl": "/oidc/auth",
-                "logoutUrl": "/oidc/logout",
-            }
-        )
-
-    return Response({"scim_enabled": settings.SCIM_ENABLED, "providers": providers})
-
-
-@api_view(["GET"])
-@authentication_classes([])
-def get_app_info(request):
-    return Response(
-        {
-            "name": "Carrot",
-            "version": settings.APP_VERSION,
-            "commit": settings.APP_COMMIT,
-            "build_date": settings.APP_BUILD_DATE,
-        }
-    )
+        response = super().finalize_response(request, response, *args, **kwargs)
+        if (
+            request.user_agent.browser.family in BROWSER_USER_AGENTS
+            and settings.SIMPLE_JWT.get("AUTH_COOKIE_ENABLED", False)
+        ):
+            response.data.pop("access", None)
+        return response
 
 
 @api_view(["GET"])
 def get_auth_status(request):
     return Response({"authenticated": request.user.is_authenticated})
-
-

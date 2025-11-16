@@ -8,7 +8,6 @@ from rest_framework.response import Response
 from django.conf import settings
 
 
-
 @api_view(["GET"])
 def check_update(request):
     try:
@@ -24,8 +23,8 @@ def check_update(request):
         return Response({"error": str(e)}, status=500)
 
 
-# Transform version string to tuple
 def version_to_tuple(v):
+    """Convert version string to a tuple of integers for comparison."""
     return tuple(int(x) for x in v.split("."))
 
 

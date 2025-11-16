@@ -18,7 +18,10 @@ RUN pip install --upgrade pip && pip install --no-cache-dir -e ".[${environment}
 
 # Run the application
 RUN chmod +x /app/start.sh
+
+WORKDIR /app/src
+
 CMD ["/app/start.sh"]
 
-# Expose 8000 port
-EXPOSE 8000
+# Expose 9890 port
+EXPOSE 9890
