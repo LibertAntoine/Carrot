@@ -15,8 +15,9 @@ import dotenv
 import logging
 import os
 from pathlib import Path
-import sys
-from corsheaders.defaults import default_headers
+import dotenv
+from datetime import timedelta
+from .services.jwt_rs256_keys import get_jwt_rs256_keys
 
 dotenv.load_dotenv()
 
@@ -147,11 +148,30 @@ AWS_S3_USE_SSL = False
 AWS_REGION = os.environ.get("S3_REGION", "us-east-1")
 PRESIGNED_URL_EXPIRES_IN = int(os.environ.get("PRESIGNED_URL_EXPIRES_IN", 7200))
 ################
-# AUTHENTICATION
-################
+# AUTHENTICATION #
+##################
 
-# Session Authentication
-JWT_ENABLED = False if os.environ.get("JWT_ENABLED") == "False" else True
+AUTH_USER_MODEL = "users.User"
+AUTH_GROUP_MODEL = "users.Group"
+
+REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
+    "auths.jwt.jwt_utils.JwtCookiesAuthentication",
+]
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+### JWT AUTHENTICATION ###
+
+PASSWORD_BASED_AUTHENTICATION = os.getenv(
+    "PASSWORD_BASED_AUTHENTICATION", "true"
+).lower() in ("true", "1", "t")
+ACCESS_TOKEN_LIFETIME = int(os.getenv("ACCESS_TOKEN_LIFETIME", "15"))
+REFRESH_TOKEN_LIFETIME = int(os.getenv("REFRESH_TOKEN_LIFETIME", "43200"))
+
+JWT_SIGNING_KEY, JWT_VERIFYING_KEY = get_jwt_rs256_keys()
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(
         minutes=os.environ.get("ACCESS_TOKEN_LIFETIME", 1440)
