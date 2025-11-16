@@ -30,19 +30,19 @@ if settings.JWT_ENABLED:
     urlpatterns += [
         path("auth", login_view, name="token_obtain_pair"),
         path(
-            "password-reset/validate_token",
-            reset_password_validate_token,
-            name="reset-password-validate",
-        ),
-        path(
-            "password-reset/confirm",
-            reset_password_confirm,
-            name="reset-password-confirm",
-        ),
-        path(
-            "password-reset",
-            reset_password_request_token,
+            "auth/password-reset/request",
+            request_reset_password,
             name="reset-password-request",
+        ),
+        path(
+            "auth/password-reset/verify",
+            verify_reset_password_otp,
+            name="reset-password-verify",
+        ),
+        path(
+            "auth/password-reset/confirm",
+            confirm_reset_password,
+            name="reset-password-confirm",
         ),
     ]
 
