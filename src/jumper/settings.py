@@ -22,7 +22,7 @@ dotenv.load_dotenv()
 # CORE SETTINGS #
 #################
 
-DEFAULT_JUMPER_MAX_VERSION = "0.4"
+DEFAULT_JUMPER_MAX_VERSION = "0.5"
 
 APP_VERSION = os.getenv("APP_VERSION", "dev")
 APP_COMMIT = os.getenv("APP_COMMIT", "unknown")
