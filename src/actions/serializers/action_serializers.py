@@ -1,16 +1,20 @@
 import logging
+
 from django.db import transaction
 from rest_framework import serializers
 from simple_history.utils import update_change_reason
-from jumper.services.storage_utils import generate_presigned_url
-from users.serializers.group_serializers import GroupDetailedSerializer
-from users.serializers.user_serializers import UserSerializer
-from users.serializers.role_serializers import RoleDetailedSerializer
-from users.serializers.user_serializers import ShortUserSerializer
-from users.models import User, Group, Role
-from .action_data_version_serializers import action_data_serializers
 
+from _config.services.storage_utils import generate_presigned_url
 from actions.models.action_models import Action, get_thumbnail_base_key
+from users.models import Group, Role, User
+from users.serializers.group_serializers import GroupDetailedSerializer
+from users.serializers.role_serializers import RoleDetailedSerializer
+from users.serializers.user_serializers import (
+    ShortUserSerializer,
+    UserSerializer,
+)
+
+from .action_data_version_serializers import action_data_serializers
 
 logger = logging.getLogger("django")
 
@@ -33,7 +37,7 @@ class ActionSerializer(serializers.ModelSerializer):
                 if isinstance(action.thumbnail, str)
                 else action.thumbnail.name
             )
-            return generate_presigned_url(key, self.context['request'])
+            return generate_presigned_url(key, self.context["request"])
         return None
 
     class Meta:
@@ -50,13 +54,20 @@ class ActionSerializer(serializers.ModelSerializer):
             "data",
             "thumbnail_url",
         ]
-        read_only_fields = ["id", "creation_date", "last_update", "thumbnail_url"]
+        read_only_fields = [
+            "id",
+            "creation_date",
+            "last_update",
+            "thumbnail_url",
+        ]
 
     def create(self, validated_data):
         """Create Action."""
         data = self.initial_data.get("data")
         if not data:
-            raise serializers.ValidationError({"data": "This field is required."})
+            raise serializers.ValidationError(
+                {"data": "This field is required."}
+            )
         self.check_data_type(data)
         data_serializer = action_data_serializers.get(data["type"])
         data_serializer = data_serializer(data={"type": data["type"]})
@@ -78,7 +89,9 @@ class ActionSerializer(serializers.ModelSerializer):
     def check_data_type(self, data):
         """Check if data type is supported."""
         if not data.get("type"):
-            raise serializers.ValidationError({"data.type": "This field is required."})
+            raise serializers.ValidationError(
+                {"data.type": "This field is required."}
+            )
         if not action_data_serializers.get(data["type"]):
             raise serializers.ValidationError(
                 {"data.type": f"Data type {data['type']} not supported."}
@@ -112,7 +125,9 @@ class ActionDetailedSerializer(ActionPlayableSerializer):
             if instance.history_user_id:
                 try:
                     user = User.objects.get(pk=instance.history_user_id)
-                    user_data = ShortUserSerializer(user, context=self.context).data
+                    user_data = ShortUserSerializer(
+                        user, context=self.context
+                    ).data
                 except User.DoesNotExist:
                     user_data = None
             rep["history"] = {
@@ -129,7 +144,10 @@ class ActionDetailedSerializer(ActionPlayableSerializer):
     )
     groups = GroupDetailedSerializer(many=True, read_only=True)
     group_ids = serializers.PrimaryKeyRelatedField(
-        queryset=Group.objects.all(), many=True, write_only=True, source="groups"
+        queryset=Group.objects.all(),
+        many=True,
+        write_only=True,
+        source="groups",
     )
     roles = RoleDetailedSerializer(many=True, read_only=True)
     role_ids = serializers.PrimaryKeyRelatedField(
@@ -156,7 +174,9 @@ class ActionDetailedSerializer(ActionPlayableSerializer):
         """Create Action."""
         data = self.initial_data.get("data")
         if not data:
-            raise serializers.ValidationError({"data": "This field is required."})
+            raise serializers.ValidationError(
+                {"data": "This field is required."}
+            )
         self.check_data_type(data)
         data_serializer = action_data_serializers.get(data["type"])
         data_serializer = data_serializer(data=data)
@@ -174,9 +194,13 @@ class ActionDetailedSerializer(ActionPlayableSerializer):
             )
         with transaction.atomic():
             if data:
-                data_serializer = action_data_serializers.get(instance.data.type)
+                data_serializer = action_data_serializers.get(
+                    instance.data.type
+                )
                 if not data_serializer:
-                    raise ValueError(f"Data type ${instance.data.type} not supported.")
+                    raise ValueError(
+                        f"Data type ${instance.data.type} not supported."
+                    )
                 data_instance = instance.data
                 data_serializer = data_serializer(data_instance, data)
                 data_serializer.is_valid(raise_exception=True)
@@ -186,12 +210,16 @@ class ActionDetailedSerializer(ActionPlayableSerializer):
             if new_key:
                 expected_prefix = get_thumbnail_base_key(instance)
                 if not new_key.startswith(expected_prefix):
-                    raise serializers.ValidationError({
-                        "thumbnail_key": (
-                            f"Invalid key. Expected it to start with '{expected_prefix}'"
-                        )
-                    })
+                    raise serializers.ValidationError(
+                        {
+                            "thumbnail_key": (
+                                f"Invalid key. Expected it to start with '{expected_prefix}'"
+                            )
+                        }
+                    )
                 instance.thumbnail.name = new_key
-            result = serializers.ModelSerializer.update(self, instance, validated_data)
+            result = serializers.ModelSerializer.update(
+                self, instance, validated_data
+            )
             update_change_reason(instance, "Action edition")
             return result

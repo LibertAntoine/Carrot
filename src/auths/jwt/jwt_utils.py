@@ -1,14 +1,17 @@
 from datetime import timedelta
-from django.utils import timezone
-from django.conf import settings
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.exceptions import InvalidToken, AuthenticationFailed
-from rest_framework_simplejwt.token_blacklist.models import (
-    OutstandingToken,
-    BlacklistedToken,
-)
 
+from django.conf import settings
+from django.utils import timezone
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import (
+    AuthenticationFailed,
+    InvalidToken,
+)
+from rest_framework_simplejwt.token_blacklist.models import (
+    BlacklistedToken,
+    OutstandingToken,
+)
+from rest_framework_simplejwt.tokens import RefreshToken
 
 BROWSER_USER_AGENTS = [
     "Brave",
@@ -62,7 +65,9 @@ def set_jwt_tokens(tokens, response, request, with_refresh=True):
             key=settings.SIMPLE_JWT["AUTH_COOKIE_NAME"],
             value=tokens["access"],
             expires=timezone.now()
-            + simple_jwt_settings.get("ACCESS_TOKEN_LIFETIME", timedelta(days=1)),
+            + simple_jwt_settings.get(
+                "ACCESS_TOKEN_LIFETIME", timedelta(days=1)
+            ),
             **cookies_config_base,
         )
 
@@ -71,7 +76,9 @@ def set_jwt_tokens(tokens, response, request, with_refresh=True):
                 key=settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_NAME"],
                 value=tokens["refresh"],
                 expires=timezone.now()
-                + simple_jwt_settings.get("REFRESH_TOKEN_LIFETIME", timedelta(days=30)),
+                + simple_jwt_settings.get(
+                    "REFRESH_TOKEN_LIFETIME", timedelta(days=30)
+                ),
                 **cookies_config_base,
             )
         response.data = {"Success": "Login successfully"}

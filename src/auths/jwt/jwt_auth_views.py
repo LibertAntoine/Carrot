@@ -1,26 +1,21 @@
 import logging
-from django.contrib.auth import authenticate
+
 from django.conf import settings
-from rest_framework import serializers
-from rest_framework.decorators import (
-    api_view,
-    permission_classes,
-)
+from django.contrib.auth import authenticate
+from rest_framework import serializers, status
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework_simplejwt import (
-    views as jwt_views,
-    serializers as jwt_serializers,
-    exceptions as jwt_exceptions,
-)
-from .jwt_utils import (
-    set_jwt_tokens,
-    get_tokens_for_user,
-    backlist_tokens,
-    BROWSER_USER_AGENTS,
-)
+from rest_framework_simplejwt import exceptions as jwt_exceptions
+from rest_framework_simplejwt import serializers as jwt_serializers
+from rest_framework_simplejwt import views as jwt_views
 
+from .jwt_utils import (
+    BROWSER_USER_AGENTS,
+    backlist_tokens,
+    get_tokens_for_user,
+    set_jwt_tokens,
+)
 
 logger = logging.getLogger("django")
 
@@ -45,7 +40,8 @@ def login(request):
             )
     else:
         return Response(
-            {"Invalid": "Invalid email or password"}, status=status.HTTP_404_NOT_FOUND
+            {"Invalid": "Invalid email or password"},
+            status=status.HTTP_404_NOT_FOUND,
         )
 
 
@@ -90,7 +86,8 @@ def logout(request):
         refresh_token = serializer.validated_data.get("refresh", None)
     if not refresh_token:
         return Response(
-            {"refresh": "This field is required."}, status=status.HTTP_400_BAD_REQUEST
+            {"refresh": "This field is required."},
+            status=status.HTTP_400_BAD_REQUEST,
         )
     backlist_tokens([refresh_token])
     response = Response(status=status.HTTP_204_NO_CONTENT)
@@ -124,7 +121,9 @@ class CookieTokenRefreshSerializer(jwt_serializers.TokenRefreshSerializer):
         if attrs.get("refresh"):
             return super().validate(attrs)
         else:
-            raise serializers.ValidationError({"refresh": "This field is required."})
+            raise serializers.ValidationError(
+                {"refresh": "This field is required."}
+            )
 
 
 class CookieTokenRefreshView(jwt_views.TokenRefreshView):

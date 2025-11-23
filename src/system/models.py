@@ -1,8 +1,8 @@
 import uuid
-from django.db import models
-from jumper.services.storage_utils.file_field import FileFieldPathFactory
-from django_resized import ResizedImageField
+
 from django.conf import settings
+from django.db import models
+from django_resized import ResizedImageField
 
 
 class SingletonModel(models.Model):
@@ -22,10 +22,9 @@ class SingletonModel(models.Model):
         return obj
 
 
-
 def generate_default_background_path(instance, filename, uuid_value=None):
     """Generate path for thumbnail"""
-    ext = filename.split('.')[-1]
+    ext = filename.split(".")[-1]
     unique_id = uuid_value or uuid.uuid4().hex
     base_key = get_default_background_base_key()
     return f"{base_key}{unique_id}.{ext}"
@@ -34,6 +33,7 @@ def generate_default_background_path(instance, filename, uuid_value=None):
 def get_default_background_base_key():
     """Get the base key for thumbnails of an action."""
     return "v1/system-info/default-background/"
+
 
 class SystemInfo(SingletonModel):
     allow_action_workspaces = models.BooleanField(default=False)

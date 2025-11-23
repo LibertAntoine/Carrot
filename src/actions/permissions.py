@@ -1,10 +1,13 @@
-from workspaces.models import Workspace
 from django.db.models import Q
 from rest_framework.permissions import BasePermission
 
+from workspaces.models import Workspace
+
 
 class IsActionWorkspaceMember(BasePermission):
-    """Custom permission to only allow members of a workspace to view or edit actions within it."""
+    """Custom permission to only allow members of a workspace to view or edit
+    actions within it.
+    """
 
     def has_object_permission(self, request, view, obj):
         user = request.user

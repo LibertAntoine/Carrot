@@ -1,7 +1,9 @@
-from rest_framework import serializers
-from .models import SystemInfo
 from django.core.exceptions import ValidationError
-from jumper.services.storage_utils import generate_presigned_url
+from rest_framework import serializers
+
+from _config.services.storage_utils import generate_presigned_url
+
+from .models import SystemInfo
 
 
 class SystemInfoSerializer(serializers.ModelSerializer):
@@ -22,12 +24,15 @@ class SystemInfoSerializer(serializers.ModelSerializer):
     def get_default_background_image_url(self, obj: SystemInfo) -> str:
         """Return system default background image url."""
         if bool(obj.default_background_image):
-            return generate_presigned_url(obj.default_background_image.name, self.context['request'])
+            return generate_presigned_url(
+                obj.default_background_image.name, self.context["request"]
+            )
         return None
 
 
 class SystemInfoDefaultBackgroundImageSerializer(serializers.ModelSerializer):
     """Serializer for SystemInfo default background image."""
+
     PICTURE_MAX_SIZE_MB = 100
 
     class Meta:

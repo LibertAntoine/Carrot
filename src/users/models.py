@@ -1,15 +1,15 @@
 import uuid
-from django.db import models
-from django.db.models.signals import pre_delete, pre_save, post_save
-from django.dispatch import receiver
-from django.contrib.auth.models import AbstractUser
-from django_group_model.models import AbstractGroup
-from django.core.validators import MinLengthValidator
-from django.core.exceptions import PermissionDenied
-from django_resized import ResizedImageField
+
 from django.conf import settings
+from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import PermissionDenied
+from django.core.validators import MinLengthValidator
+from django.db import models
+from django.db.models.signals import post_save, pre_delete, pre_save
+from django.dispatch import receiver
+from django_group_model.models import AbstractGroup
+from django_resized import ResizedImageField
 from django_scim.models import AbstractSCIMGroupMixin, AbstractSCIMUserMixin
-from jumper.services.storage_utils.file_field import FileFieldPathFactory
 
 
 class Group(AbstractSCIMGroupMixin, AbstractGroup):
@@ -71,12 +71,16 @@ class User(AbstractSCIMUserMixin, AbstractUser):
 
     @property
     def scim_groups(self):
-        return self.groups.all() if settings.SCIM_ENABLED else Group.objects.none()
+        return (
+            self.groups.all() if settings.SCIM_ENABLED else Group.objects.none()
+        )
 
     @property
     def is_superuser_group_member(self):
         if settings.ADMIN_GROUP and settings.SCIM_ENABLED:
-            superadmin_group = Group.objects.filter(name=settings.ADMIN_GROUP).first()
+            superadmin_group = Group.objects.filter(
+                name=settings.ADMIN_GROUP
+            ).first()
             if superadmin_group and superadmin_group in self.groups.all():
                 return True
         return False
@@ -84,12 +88,15 @@ class User(AbstractSCIMUserMixin, AbstractUser):
     @property
     def is_admin(self):
         return (
-            self.system_role == self.SystemRole.ADMIN or self.is_superuser_group_member
+            self.system_role == self.SystemRole.ADMIN
+            or self.is_superuser_group_member
         )
 
     @property
     def is_action_manager(self):
-        return self.system_role == self.SystemRole.ACTION_MANAGER or self.is_admin
+        return (
+            self.system_role == self.SystemRole.ACTION_MANAGER or self.is_admin
+        )
 
     @property
     def is_user_manager(self):
@@ -160,10 +167,9 @@ class Role(models.Model):
     )
 
 
-
 def generate_custom_background_path(instance, filename, uuid_value=None):
     """Generate path for thumbnail"""
-    ext = filename.split('.')[-1]
+    ext = filename.split(".")[-1]
     unique_id = uuid_value or uuid.uuid4().hex
     base_key = get_custom_background_base_key(instance)
     return f"{base_key}{unique_id}.{ext}"
@@ -193,4 +199,3 @@ class UserPreferences(models.Model):
 def create_user_preferences(sender, instance, created, **kwargs):
     if created:
         UserPreferences.objects.create(user=instance)
-

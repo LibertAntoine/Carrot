@@ -1,15 +1,16 @@
+from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
-from django.db.models import Q
-from jumper.permissions import IsReadOnly
-from users.permissions import IsAdmin
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.pagination import PageNumberPagination
-from users.permissions import IsActionManager
-from .models import Workspace
+from rest_framework.permissions import IsAuthenticated
+
+from _config.permissions import IsReadOnly
 from system.models import SystemInfo
-from .serializers import WorkspaceSerializer, DetailedWorkspaceSerializer
+from users.permissions import IsActionManager, IsAdmin
+
+from .models import Workspace
+from .serializers import DetailedWorkspaceSerializer, WorkspaceSerializer
 
 
 class WorkspacePagination(PageNumberPagination):
@@ -59,10 +60,16 @@ class WorkspaceViewSet(viewsets.ModelViewSet):
 
     def get_user_workspaces(self, queryset):
         user = self.request.user
-        workspace_ids = Workspace.objects.filter(
-            Q(users=user)
-            | Q(groups__user_set=user)
-            | Q(roles__users=user)
-            | Q(roles__groups__user_set=user)
-        ).values_list("id", flat=True).distinct()
-        return queryset.filter(id__in=workspace_ids).select_related("created_by")
+        workspace_ids = (
+            Workspace.objects.filter(
+                Q(users=user)
+                | Q(groups__user_set=user)
+                | Q(roles__users=user)
+                | Q(roles__groups__user_set=user)
+            )
+            .values_list("id", flat=True)
+            .distinct()
+        )
+        return queryset.filter(id__in=workspace_ids).select_related(
+            "created_by"
+        )

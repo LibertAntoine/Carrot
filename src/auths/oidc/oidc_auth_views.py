@@ -1,11 +1,13 @@
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
+
 from django.http import HttpResponse
-from rest_framework.permissions import AllowAny
 from mozilla_django_oidc.views import (
-    OIDCAuthenticationRequestView,
     OIDCAuthenticationCallbackView,
+    OIDCAuthenticationRequestView,
 )
-from auths.jwt.jwt_utils import set_jwt_tokens, get_tokens_for_user
+from rest_framework.permissions import AllowAny
+
+from auths.jwt.jwt_utils import get_tokens_for_user, set_jwt_tokens
 
 
 class OIDCAuthCallback(OIDCAuthenticationCallbackView):
@@ -19,7 +21,9 @@ class OIDCAuthCallback(OIDCAuthenticationCallbackView):
         """
         tokens = get_tokens_for_user(self.user)
         state = self.request.GET.get("state")
-        custom_params = self.request.session.pop(f"oidc_custom_params_{state}", {})
+        custom_params = self.request.session.pop(
+            f"oidc_custom_params_{state}", {}
+        )
         if custom_params.get("client") == "jumper":
             response = HttpResponse(status=302)
             redirect_url = (

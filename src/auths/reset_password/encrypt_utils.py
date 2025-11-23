@@ -1,9 +1,10 @@
-import hmac
 import hashlib
+import hmac
 import secrets
-from django.utils import timezone
 from datetime import timedelta
+
 from django.conf import settings
+from django.utils import timezone
 
 OTP_LENGTH = 6
 OTP_EXPIRATION_MINUTES = 15

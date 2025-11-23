@@ -1,5 +1,6 @@
 from django.conf import settings
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
+
 from users.models import User
 
 

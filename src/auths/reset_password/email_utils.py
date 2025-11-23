@@ -1,12 +1,15 @@
 import logging
+
 from django.conf import settings
-from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 
 logger = logging.getLogger("django")
 
 
-def send_password_reset_otp_email(email: str, username: str, otp: str, ip_address: str):
+def send_password_reset_otp_email(
+    email: str, username: str, otp: str, ip_address: str
+):
     """
     Send a password reset OTP email to the user.
 
@@ -25,7 +28,9 @@ def send_password_reset_otp_email(email: str, username: str, otp: str, ip_addres
     }
 
     # Render HTML and plaintext versions
-    email_html_message = render_to_string("user_reset_password_otp_email.html", context)
+    email_html_message = render_to_string(
+        "user_reset_password_otp_email.html", context
+    )
     email_plaintext_message = render_to_string(
         "user_reset_password_otp_email.txt", context
     )
@@ -47,7 +52,9 @@ def send_password_reset_otp_email(email: str, username: str, otp: str, ip_addres
     # Send and log
     try:
         msg.send(fail_silently=False)
-        logger.info("Password reset OTP sent to %s from IP %s", email, ip_address)
+        logger.info(
+            "Password reset OTP sent to %s from IP %s", email, ip_address
+        )
     except Exception as e:
         logger.error(
             "Failed to send password reset OTP to %s from IP %s: %s",
@@ -58,7 +65,9 @@ def send_password_reset_otp_email(email: str, username: str, otp: str, ip_addres
         raise
 
 
-def send_password_reset_confirm_email(email: str, username: str, ip_address: str):
+def send_password_reset_confirm_email(
+    email: str, username: str, ip_address: str
+):
     """
     Send a confirmation email after a successful password reset.
 
@@ -100,7 +109,9 @@ def send_password_reset_confirm_email(email: str, username: str, ip_address: str
     try:
         msg.send(fail_silently=False)
         logger.info(
-            "Password reset confirmation sent to %s from IP %s", email, ip_address
+            "Password reset confirmation sent to %s from IP %s",
+            email,
+            ip_address,
         )
     except Exception as e:
         logger.error(

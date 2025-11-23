@@ -11,9 +11,11 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import logging
 import os
 import sys
-from pathlib import Path
-import dotenv
 from datetime import timedelta
+from pathlib import Path
+
+import dotenv
+
 from .services.jwt_rs256_keys import get_jwt_rs256_keys
 
 dotenv.load_dotenv()
@@ -38,8 +40,8 @@ SECRET_KEY = os.getenv(
 DEBUG = os.getenv("DEBUG", "false").lower() in ("true", "1")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-ROOT_URLCONF = "jumper.urls"
-WSGI_APPLICATION = "jumper.wsgi.application"
+ROOT_URLCONF = "_config.urls"
+WSGI_APPLICATION = "_config.wsgi.application"
 
 INSTALLED_APPS = [
     "auths",
@@ -112,10 +114,10 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin")
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ["POSTGRES_DB"],
-        "USER": os.environ["POSTGRES_USER"],
-        "PASSWORD": os.environ["POSTGRES_PASSWORD"],
-        "HOST": os.environ["POSTGRES_HOST"],
+        "NAME": os.getenv("POSTGRES_DB", "carrot-db"),
+        "USER": os.getenv("POSTGRES_USER", "carrot"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "unsecurepassword"),
+        "HOST": os.getenv("POSTGRES_HOST", "carrot-postgres"),
         "PORT": os.getenv("POSTGRES_PORT", "5432"),
     }
 }
@@ -130,7 +132,9 @@ STORAGE_BACKEND_STRATEGIES = {
     "swift": "storages.backends.swift.SwiftStorage",
 }
 
-STORAGE_BACKEND = os.getenv("OBJECT", list(STORAGE_BACKEND_STRATEGIES.keys())[0])
+STORAGE_BACKEND = os.getenv(
+    "OBJECT", list(STORAGE_BACKEND_STRATEGIES.keys())[0]
+)
 
 if STORAGE_BACKEND not in list(STORAGE_BACKEND_STRATEGIES.keys()):
     raise ValueError(
@@ -142,7 +146,7 @@ DEFAULT_FILE_STORAGE = STORAGE_BACKEND_STRATEGIES[STORAGE_BACKEND]
 
 ### LOCAL - FILE STORAGE ###
 
-MEDIA_ROOT = os.getenv("MEDIA_ROOT", "/app/files")
+MEDIA_ROOT = os.getenv("LOCAL_MEDIA_ROOT", "/app/files")
 
 ### S3 - OBJECT STORAGE ###
 
@@ -170,7 +174,9 @@ SWIFT_AUTO_CREATE_CONTAINER = True
 SWIFT_USE_TEMP_URLS = True
 # to generate one: openstack container set albatross --property Temp-URL-Key=your_key_here
 SWIFT_TEMP_URL_KEY = os.getenv("SWIFT_TEMP_URL_KEY", None)
-SWIFT_TEMP_URL_DURATION = int(os.getenv("SWIFT_TEMP_URL_DURATION", "3600"))  # 1h
+SWIFT_TEMP_URL_DURATION = int(
+    os.getenv("SWIFT_TEMP_URL_DURATION", "3600")
+)  # 1h
 SWIFT_AUTH_VERSION = os.getenv("SWIFT_AUTH_VERSION", "3")
 
 ##################
@@ -241,7 +247,9 @@ ALLOW_LOGOUT_GET_METHOD = True
 OIDC_RP_SIGN_ALGO = os.getenv("OIDC_RP_SIGN_ALGO", "HS256")
 OIDC_PROVIDER_NAME = os.getenv("OIDC_PROVIDER_NAME", "OIDC")
 OIDC_RP_SCOPES = os.getenv("OIDC_RP_SCOPES", "openid email profile")
-OIDC_USERNAME_ATTRIBUTE = os.getenv("OIDC_USERNAME_ATTRIBUTE", "preferred_username")
+OIDC_USERNAME_ATTRIBUTE = os.getenv(
+    "OIDC_USERNAME_ATTRIBUTE", "preferred_username"
+)
 
 if OIDC_ENABLED:
     AUTHENTICATION_BACKENDS.insert(
@@ -391,11 +399,15 @@ GALLERY_BACKGROUND_IMAGE_FORMAT = "PNG"
 
 ### JUMPER FRONTEND UPDATES ###
 
-ALLOW_FRONTEND_UPDATES = os.getenv("ALLOW_FRONTEND_UPDATES", "true").lower() in (
+ALLOW_FRONTEND_UPDATES = os.getenv(
+    "ALLOW_FRONTEND_UPDATES", "true"
+).lower() in (
     "true",
     "1",
 )
 JUMPER_REPOSITORY_URL = os.getenv(
     "JUMPER_REPOSITORY_URL", "https://api.github.com/repos/Jumper-Carrot/Jumper"
 )
-MAX_ALLOWED_VERSION = os.getenv("MAX_ALLOWED_VERSION", DEFAULT_JUMPER_MAX_VERSION)
+MAX_ALLOWED_VERSION = os.getenv(
+    "MAX_ALLOWED_VERSION", DEFAULT_JUMPER_MAX_VERSION
+)

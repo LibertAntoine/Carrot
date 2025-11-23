@@ -1,20 +1,23 @@
-from http import HTTPMethod
 import mimetypes
+
+from django.core.exceptions import ValidationError
 from django.http import FileResponse
 from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.core.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated
+
+from _config.permissions import IsFileAuthenticated
+from _config.services.storage_utils import generate_presigned_url
 from users.permissions import IsAdmin
-from rest_framework.decorators import api_view, permission_classes
-from jumper.permissions import IsFileAuthenticated
-from jumper.services.storage_utils import generate_presigned_url
+
 from .models import SystemInfo
 from .serializers import (
-    SystemInfoSerializer,
     SystemInfoDefaultBackgroundImageSerializer,
+    SystemInfoSerializer,
 )
+
 
 class SystemInfoView(APIView):
     """Get or update system info."""
@@ -28,13 +31,18 @@ class SystemInfoView(APIView):
 
     def get(self, request):
         system_info = SystemInfo.get_instance()
-        serializer = SystemInfoSerializer(system_info, context={"request": request})
+        serializer = SystemInfoSerializer(
+            system_info, context={"request": request}
+        )
         return Response(serializer.data)
 
     def patch(self, request):
         system_info = SystemInfo.get_instance()
         serializer = SystemInfoSerializer(
-            system_info, data=request.data, partial=True, context={"request": request}
+            system_info,
+            data=request.data,
+            partial=True,
+            context={"request": request},
         )
         if serializer.is_valid():
             serializer.save()
@@ -55,19 +63,23 @@ def system_default_background_file(request, pk=None, filename=None):
         and request.file_key != system_info.default_background_image.name
     ):
         raise ValidationError("Invalid file key provided.")
-    content_type = mimetypes.guess_type(
-        system_info.default_background_image.name
-    )[0] or "application/octet-stream"
+    content_type = (
+        mimetypes.guess_type(system_info.default_background_image.name)[0]
+        or "application/octet-stream"
+    )
     return FileResponse(
         system_info.default_background_image, content_type=content_type
     )
+
 
 class SystemDefaultBackgroundView(APIView):
     permission_classes = [IsAuthenticated | IsFileAuthenticated, IsAdmin]
 
     def put(self, request):
         system_info = SystemInfo.get_instance()
-        serializer = SystemInfoDefaultBackgroundImageSerializer(data=request.data)
+        serializer = SystemInfoDefaultBackgroundImageSerializer(
+            data=request.data
+        )
         serializer.is_valid(raise_exception=True)
         system_info.default_background_image = serializer.validated_data[
             "default_background_image"
@@ -87,5 +99,6 @@ class SystemDefaultBackgroundView(APIView):
         system_info.default_background_image.delete()
         system_info.save()
         return Response(
-            "Default background image deleted.", status=status.HTTP_204_NO_CONTENT
+            "Default background image deleted.",
+            status=status.HTTP_204_NO_CONTENT,
         )

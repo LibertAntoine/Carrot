@@ -1,16 +1,18 @@
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.request import Request
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.pagination import PageNumberPagination
-from jumper.permissions import IsOwner, IsReadOnly
-from users.permissions import IsActionManager, IsAdmin, IsUserManager
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+
+from _config.permissions import IsOwner, IsReadOnly
 from users.models import User
+from users.permissions import IsActionManager, IsUserManager
 from users.serializers.user_serializers import UserSerializer
+
 from .user_profile_picture_mixin import UserProfilePictureMixin
 
 
@@ -57,7 +59,9 @@ class UserViewSet(viewsets.ModelViewSet, UserProfilePictureMixin):
 
     @action(methods=["get"], detail=False)
     def me(self, request: Request) -> Response:
-        return Response(UserSerializer(request.user, context={"request": request}).data)
+        return Response(
+            UserSerializer(request.user, context={"request": request}).data
+        )
 
     @action(methods=["get"], detail=False)
     def exists(self, request: Request) -> Response:

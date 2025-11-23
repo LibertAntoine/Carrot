@@ -1,22 +1,22 @@
 import mimetypes
+from http import HTTPMethod
 from urllib import response
 
 from django.forms import ValidationError
 from django.http import FileResponse
-from jumper.permissions import IsFileAuthenticated, IsOwner
-from jumper.services.storage_utils.presigned_url import generate_presigned_url
-from users.models import UserPreferences
-from users.serializers.user_preferences_serializers import (
-    UserPreferencesSerializer,
-    UserPreferenceCustomBackgroundImageSerializer,
-)
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
-from users.permissions import IsAdmin
-from http import HTTPMethod
-from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from _config.permissions import IsFileAuthenticated, IsOwner
+from _config.services.storage_utils.presigned_url import generate_presigned_url
+from users.models import UserPreferences
+from users.permissions import IsAdmin
+from users.serializers.user_preferences_serializers import (
+    UserPreferenceCustomBackgroundImageSerializer,
+    UserPreferencesSerializer,
+)
 
 
 class UserPreferencesViewSet(viewsets.ModelViewSet):
@@ -90,11 +90,14 @@ class UserPreferencesViewSet(viewsets.ModelViewSet):
         user_preferences = self.get_object()
         if (
             request.file_key
-            and request.file_key != user_preferences.custom_background_image.name
+            and request.file_key
+            != user_preferences.custom_background_image.name
         ):
             raise ValidationError("Invalid file key provided.")
         content_type = (
-            mimetypes.guess_type(user_preferences.custom_background_image.name)[0]
+            mimetypes.guess_type(user_preferences.custom_background_image.name)[
+                0
+            ]
             or "application/octet-stream"
         )
         return FileResponse(

@@ -1,11 +1,13 @@
 import os
-from django.core import signing
-from django.conf import settings
-from django.utils import timezone
-from django.core.files.storage import default_storage
-from jumper.services.utils import get_full_domain_from_request
 from datetime import timedelta
 from urllib.parse import urlencode
+
+from django.conf import settings
+from django.core import signing
+from django.core.files.storage import default_storage
+from django.utils import timezone
+
+from _config.services.utils import get_full_domain_from_request
 
 LOCAL_TOKEN_EXPIRATION = 3600  # 1 hour
 
@@ -21,7 +23,11 @@ def generate_presigned_url(file_key, request):
         expires_at = (
             timezone.now() + timedelta(seconds=LOCAL_TOKEN_EXPIRATION)
         ).timestamp()
-        token_data = {"file": file_key, "exp": expires_at, "user": request.user.id}
+        token_data = {
+            "file": file_key,
+            "exp": expires_at,
+            "user": request.user.id,
+        }
         token = signing.dumps(token_data, salt="local-file-token")
         url = f"{base_url}{url}?{urlencode({'token': token})}"
         return url
@@ -59,12 +65,14 @@ def generate_presigned_upload_url(
         )
 
     elif settings.STORAGE_BACKEND == "swift":
-        import time
         import hashlib
         import hmac
+        import time
 
         # Swift presigned PUT URL
-        expires = int(time.time()) + getattr(settings, "SWIFT_TEMP_URL_DURATION", 3600)
+        expires = int(time.time()) + getattr(
+            settings, "SWIFT_TEMP_URL_DURATION", 3600
+        )
         base_path = f"/v1/AUTH_{settings.SWIFT_TENANT_NAME}/{settings.SWIFT_CONTAINER_NAME}/{key}"
         key = settings.SWIFT_TEMP_URL_KEY.encode("utf-8")
 

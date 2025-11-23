@@ -1,11 +1,13 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+
 from auths.reset_password.encrypt_utils import (
+    get_reset_token_key,
     hash_token,
     is_same_hash,
-    get_reset_token_key,
 )
+
 
 class PasswordResetRequest(models.Model):
     MAX_ATTEMPTS = 5
@@ -24,7 +26,9 @@ class PasswordResetRequest(models.Model):
     reset_token = models.CharField(max_length=64, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.user.email} - expires at {self.expires_at:%Y-%m-%d %H:%M}"
+        return (
+            f"{self.user.email} - expires at {self.expires_at:%Y-%m-%d %H:%M}"
+        )
 
     def is_otp_valid(self, otp: str) -> bool:
         """Check if the provided OTP is valid."""

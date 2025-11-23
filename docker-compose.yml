@@ -1,30 +1,26 @@
 services:
   carrot:
-    container_name: carrot-app
     build:
       context: .
       args:
         environment: "dev"
+    container_name: carrot-app
     restart: always
     env_file:
       - .env
     ports:
-      - 8000:9890
-    environment:
-      - S3_ENDPOINT_URL=http://carrot-minio:9000
+      - 8000:${CARROT_PORT:-9890}
     volumes:
       - .:/app
       - carrot_keys:/etc/keys
-    command: python manage.py runserver 0.0.0.0:9890
+    command: python manage.py runserver 0.0.0.0:${CARROT_PORT:-9890}
     depends_on:
       - carrot-postgres
-      - carrot-minio
 
   carrot-postgres:
+    image: postgres:${POSTGRES_IMAGE_VERSION}
     container_name: carrot-postgres
-    image: postgres:15.2
     restart: always
-
     volumes:
       - pg_data:/var/lib/postgresql/data
     environment:
@@ -37,47 +33,6 @@ services:
       timeout: 2s
       retries: 10
 
-  carrot-minio:
-    container_name: carrot-minio
-    image: minio/minio:RELEASE.2023-12-09T18-17-51Z
-    restart: unless-stopped
-    ports:
-      - 9000:9000
-      - 9001:9001
-    environment:
-      - MINIO_ACCESS_KEY=${S3_ACCESS_KEY_ID}
-      - MINIO_SECRET_KEY=${S3_SECRET_ACCESS_KEY}
-    volumes:
-      - ./dev/data/minio:/data
-    command: server /data --address ':9000' --console-address ':9001'
-
-  carrot-create-minio-bucket:
-    image: minio/mc
-    container_name: carrot-create-minio-bucket
-    restart: "no"
-
-    depends_on:
-      - carrot-minio
-    entrypoint: >
-      /bin/sh -c "
-      /usr/bin/mc config host add myminio http://carrot-minio:9000 ${S3_ACCESS_KEY_ID} ${S3_SECRET_ACCESS_KEY};
-      /usr/bin/mc mb --ignore-existing myminio/${S3_BUCKET_NAME}
-      exit 0;
-      "
-
-  # carrot-minio:
-  #   image: minio/minio:${MINIO_IMAGE_VERSION:-RELEASE.2025-09-07T16-13-09Z}
-  #   restart: always
-  #   environment:
-  #     - MINIO_ACCESS_KEY=${S3_ACCESS_KEY_ID:-minioaccesskey}
-  #     - MINIO_SECRET_KEY=${S3_SECRET_ACCESS_KEY:-miniosecretkey}
-  #   volumes:
-  #     - minio_data:/data
-  #   entrypoint: sh
-  #   command: -c 'mkdir -p /data/${S3_BUCKET_NAME:-carrot} && /usr/bin/minio server /data'
-
-
 volumes:
   carrot_keys:
   pg_data:
-  minio_data:

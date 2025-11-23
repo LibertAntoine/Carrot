@@ -1,6 +1,7 @@
+import logging
 import smtplib
 import ssl
-import logging
+
 from django.apps import AppConfig
 from django.conf import settings
 
