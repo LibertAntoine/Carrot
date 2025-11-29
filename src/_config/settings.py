@@ -294,9 +294,9 @@ SCIM_SERVICE_PROVIDER = {
 
 ADMIN_GROUP = os.getenv("ADMIN_GROUP", None)
 
-#########
-# LOGGING
-#########
+###########
+# LOGGING #
+###########
 
 LOGGING = {
     "version": 1,
@@ -360,9 +360,14 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "jumper@company.com")
 ### CORS POLICY ###
 
 ALLOWED_HOSTS = ["*"]
-CORS_ALLOW_NULL_ORIGIN = True
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_HEADERS = ["*"]
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https?://[^/]+$",
+]
+CORS_ALLOW_HEADERS = [
+    "*",
+    "x-client-agent",
+]
 CORS_ALLOW_METHODS = ["*"]
 
 ### DEFAULT AUTO FIELD ###

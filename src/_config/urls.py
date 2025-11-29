@@ -17,6 +17,9 @@ urlpatterns = [
         include(
             [
                 *router.urls,
+                path("auth/config", get_app_info, name="app-info"),
+                path("info", get_app_info, name="app-info"),
+                path("", get_app_info, name="app-info"),
                 path("", get_app_info, name="app-info"),
                 path("frontend-update", check_update, name="frontend-update"),
                 path("", include("users.urls")),
